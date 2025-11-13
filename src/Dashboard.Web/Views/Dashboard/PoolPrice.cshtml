@@ -1,0 +1,385 @@
+@{
+    ViewData["Title"] = "Pool Price Analytics";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Content Header -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-dollar-sign"></i> Pool Price Analytics</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/">Home</a></li>
+                    <li class="breadcrumb-item active">Pool Price</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        
+        <!-- Date Selection Card -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-calendar"></i> Select Date Range</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Start Date</label>
+                                    <input type="date" class="form-control" id="startDate">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>End Date (Optional)</label>
+                                    <input type="date" class="form-control" id="endDate">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label>&nbsp;</label>
+                                <button class="btn btn-primary btn-block" onclick="fetchPoolPrice()">
+                                    <i class="fas fa-chart-line"></i> Load Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row" id="statsSection" style="display: none;">
+            <div class="col-lg-2 col-6">
+                <div class="info-box bg-success">
+                    <span class="info-box-icon"><i class="fas fa-chart-line"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Avg Price</span>
+                        <span class="info-box-number" id="avgPrice">$--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2 col-6">
+                <div class="info-box bg-info">
+                    <span class="info-box-icon"><i class="fas fa-arrow-down"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Min Price</span>
+                        <span class="info-box-number" id="minPrice">$--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2 col-6">
+                <div class="info-box bg-danger">
+                    <span class="info-box-icon"><i class="fas fa-arrow-up"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Max Price</span>
+                        <span class="info-box-number" id="maxPrice">$--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2 col-6">
+                <div class="info-box bg-warning">
+                    <span class="info-box-icon"><i class="fas fa-chart-bar"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Median</span>
+                        <span class="info-box-number" id="medianPrice" style="color: white;">$--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2 col-6">
+                <div class="info-box bg-secondary">
+                    <span class="info-box-icon"><i class="fas fa-calendar-alt"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">30-Day Avg</span>
+                        <span class="info-box-number" id="rolling30">$--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2 col-6">
+                <div class="info-box bg-primary">
+                    <span class="info-box-icon"><i class="fas fa-clock"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Settled</span>
+                        <span class="info-box-number" id="settledHours">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Row -->
+        <div class="row" id="chartSection" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-chart-area"></i> Pool Price Over Time</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <button type="button" class="btn btn-tool" data-card-widget="maximize">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="priceChart" style="height: 400px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Row -->
+        <div class="row" id="tableSection" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-table"></i> Hourly Price Data</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-sm btn-success" onclick="exportData()">
+                                <i class="fas fa-file-excel"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body table-responsive p-0" style="height: 500px;">
+                        <table class="table table-head-fixed text-nowrap table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Time (MPT)</th>
+                                    <th>Pool Price</th>
+                                    <th>Forecast Price</th>
+                                    <th>Difference</th>
+                                    <th>30-Day Avg</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        Select a date range and click "Load Data"
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        let priceChart = null;
+        let currentData = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Pool Price dashboard loaded');
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').value = today;
+            document.getElementById('startDate').max = today;
+            document.getElementById('endDate').max = today;
+            console.log('Default date set to:', today);
+        });
+
+        async function fetchPoolPrice() {
+            try {
+                showLoading();
+                
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                
+                if (!startDate) {
+                    showToast('Please select a start date', 'warning');
+                    return;
+                }
+                
+                let url = `/api/AesoApi/poolprice?startDate=${startDate}`;
+                if (endDate) {
+                    url += `&endDate=${endDate}`;
+                }
+                
+                const [dataResponse, summaryResponse] = await Promise.all([
+                    fetch(url),
+                    fetch(`/api/AesoApi/poolprice/summary?startDate=${startDate}${endDate ? '&endDate=' + endDate : ''}`)
+                ]);
+                
+                if (!dataResponse.ok) {
+                    const error = await dataResponse.json();
+                    throw new Error(error.message || 'Failed to fetch data');
+                }
+                
+                const data = await dataResponse.json();
+                const summary = summaryResponse.ok ? await summaryResponse.json() : null;
+                
+                currentData = data;
+                updateUI(data, summary);
+                showToast('Data loaded successfully', 'success');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Failed to load data: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function updateUI(data, summary) {
+            document.getElementById('statsSection').style.display = 'flex';
+            document.getElementById('chartSection').style.display = 'block';
+            document.getElementById('tableSection').style.display = 'block';
+            
+            if (summary && summary.averagePrice) {
+                document.getElementById('avgPrice').textContent = '$' + summary.averagePrice.toFixed(2);
+                document.getElementById('minPrice').textContent = '$' + summary.minPrice.toFixed(2);
+                document.getElementById('maxPrice').textContent = '$' + summary.maxPrice.toFixed(2);
+                document.getElementById('medianPrice').textContent = '$' + summary.medianPrice.toFixed(2);
+                document.getElementById('rolling30').textContent = summary.rolling30DayAvg ? '$' + summary.rolling30DayAvg.toFixed(2) : '--';
+                document.getElementById('settledHours').textContent = summary.settledHours + '/' + summary.totalHours;
+            }
+            
+            updateChart(data.priceData);
+            updateTable(data.priceData);
+        }
+
+        function updateChart(priceData) {
+            const ctx = document.getElementById('priceChart');
+            
+            if (priceChart) {
+                priceChart.destroy();
+            }
+            
+            const labels = priceData.map(p => {
+                const time = p.beginDatetimeMpt.split(' ')[1] || p.beginDatetimeMpt;
+                return time;
+            });
+            
+            const actualPrices = priceData.map(p => p.poolPrice ? parseFloat(p.poolPrice) : null);
+            const forecastPrices = priceData.map(p => p.forecastPoolPrice ? parseFloat(p.forecastPoolPrice) : null);
+            
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Actual Pool Price',
+                            data: actualPrices,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Forecast Price',
+                            data: forecastPrices,
+                            borderColor: '#ffc107',
+                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Price ($/MWh)'
+                            },
+                            ticks: {
+                                callback: value => '$' + value
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTable(priceData) {
+            const tbody = document.getElementById('tableBody');
+            
+            if (!priceData || priceData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No data available</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            priceData.forEach(entry => {
+                const actualPrice = entry.poolPrice ? parseFloat(entry.poolPrice) : null;
+                const forecastPrice = entry.forecastPoolPrice ? parseFloat(entry.forecastPoolPrice) : null;
+                const difference = (actualPrice && forecastPrice) ? (actualPrice - forecastPrice).toFixed(2) : '--';
+                const rolling30 = entry.rolling30DayAvg || '--';
+                
+                const priceClass = actualPrice 
+                    ? (actualPrice < 30 ? 'success' : actualPrice < 70 ? 'warning' : 'danger')
+                    : 'secondary';
+                
+                const status = entry.poolPrice 
+                    ? '<span class="badge badge-success"><i class="fas fa-check"></i> Settled</span>'
+                    : '<span class="badge badge-warning"><i class="fas fa-clock"></i> Forecast</span>';
+                
+                const diffColor = difference !== '--' ? (parseFloat(difference) > 0 ? 'text-danger' : 'text-success') : '';
+                
+                html += `
+                    <tr>
+                        <td><strong>${entry.beginDatetimeMpt}</strong></td>
+                        <td><span class="badge badge-${priceClass}">${actualPrice ? '$' + actualPrice.toFixed(2) : '--'}</span></td>
+                        <td>$${forecastPrice ? forecastPrice.toFixed(2) : '--'}</td>
+                        <td class="${diffColor}">${difference !== '--' ? (difference > 0 ? '+$' : '$') + difference : '--'}</td>
+                        <td>${rolling30 !== '--' ? '$' + parseFloat(rolling30).toFixed(2) : '--'}</td>
+                        <td>${status}</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        function exportData() {
+            if (!currentData) {
+                showToast('No data to export', 'warning');
+                return;
+            }
+            showToast('Export functionality coming soon', 'info');
+        }
+    </script>
+}

@@ -1,0 +1,627 @@
+@{
+    ViewData["Title"] = "SAGD SOR Analytics";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-industry"></i> SAGD SOR Analytics</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/">Home</a></li>
+                    <li class="breadcrumb-item active">SAGD SOR</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        
+        <!-- Key Performance Indicators Row -->
+        <div class="row">
+            <!-- Real-Time SOR -->
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-primary">
+                    <div class="inner">
+                        <h3 id="currentSOR">--</h3>
+                        <p>Current SOR</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <a href="#" class="small-box-footer">
+                        Steam-to-Oil Ratio <i class="fas fa-info-circle"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Steam Injection -->
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3 id="steamInjection" style="color: white;">--</h3>
+                        <p style="color: white;">Steam Injection</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <a href="#" class="small-box-footer" style="color: white;">
+                        m³/d <i class="fas fa-arrow-circle-up"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Bitumen Production -->
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3 id="bitumenProduction">--</h3>
+                        <p>Bitumen Production</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-oil-can"></i>
+                    </div>
+                    <a href="#" class="small-box-footer">
+                        bbl/d <i class="fas fa-arrow-circle-up"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Connection Status -->
+            <div class="col-lg-3 col-6">
+                <div id="connectionBox" class="small-box bg-secondary">
+                    <div class="inner">
+                        <h3 id="connectionStatus">Connecting...</h3>
+                        <p>SignalR Status</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-plug"></i>
+                    </div>
+                    <a href="#" class="small-box-footer">
+                        Live Data Feed <i class="fas fa-signal"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SOR Trend Chart -->
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-chart-line"></i> Real-Time SOR Trend</h3>
+                        <div class="card-tools">
+                            <span class="badge badge-success" id="sorStatus">Optimal: 2.0-3.5</span>
+                            <span class="badge badge-warning" id="sorWarning" style="display:none;">Inefficient: &gt;4.0</span>
+                            <span class="badge badge-danger" id="sorCritical" style="display:none;">Critical: &gt;5.0</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="sorChart" height="80"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dual Axis: Steam & Bitumen -->
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-chart-area"></i> Steam Injection vs Bitumen Production</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="steamBitumenChart" height="80"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Process Parameters Row -->
+        <div class="row">
+            <!-- Steam Quality -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-cloud"></i> Steam Quality</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="steamQualityChart" height="150"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reservoir Temperature -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-thermometer-half"></i> Reservoir Temperature</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="reservoirTempChart" height="150"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ESP Status -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-fan"></i> ESP Run Status</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="espStatusChart" height="150"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Metrics Table -->
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-table"></i> Live SAGD Metrics</h3>
+                    </div>
+                    <div class="card-body table-responsive p-0" style="max-height: 400px;">
+                        <table class="table table-head-fixed text-nowrap table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Value</th>
+                                    <th>Unit</th>
+                                    <th>Timestamp</th>
+                                    <th>Quality</th>
+                                </tr>
+                            </thead>
+                            <tbody id="metricsTable">
+                                <tr>
+                                    <td colspan="5" class="text-center">Waiting for data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<script>
+    let connection;
+    let sorChart, steamBitumenChart, steamQualityChart, reservoirTempChart, espStatusChart;
+    
+    // Data buffers (keeping last 60 seconds)
+    const maxDataPoints = 60;
+    const timeLabels = [];
+    const sorData = [];
+    const steamData = [];
+    const bitumenData = [];
+    const steamQualityData = [];
+    const reservoirTempData = [];
+    const espStatusData = [];
+    
+    // Metrics storage
+    const metricsMap = new Map();
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('SAGD SOR dashboard loaded');
+        initCharts();
+        initSignalR();
+    });
+
+    // Initialize all charts
+    function initCharts() {
+        console.log('Initializing SOR charts...');
+
+        // SOR Trend Chart with threshold zones
+        const sorCtx = document.getElementById('sorChart').getContext('2d');
+        sorChart = new Chart(sorCtx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'SOR',
+                    data: sorData,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    annotation: {
+                        annotations: {
+                            optimal: {
+                                type: 'box',
+                                yMin: 2.0,
+                                yMax: 3.5,
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                borderColor: 'rgba(40, 167, 69, 0.5)',
+                                borderWidth: 1
+                            },
+                            inefficient: {
+                                type: 'box',
+                                yMin: 4.0,
+                                yMax: 5.0,
+                                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                                borderColor: 'rgba(255, 193, 7, 0.5)',
+                                borderWidth: 1
+                            },
+                            critical: {
+                                type: 'box',
+                                yMin: 5.0,
+                                yMax: 8.0,
+                                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                                borderColor: 'rgba(220, 53, 69, 0.5)',
+                                borderWidth: 1
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 1,
+                        max: 8,
+                        title: {
+                            display: true,
+                            text: 'SOR (m³/bbl)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time (Last 60s)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Steam & Bitumen Dual Axis Chart
+        const steamBitumenCtx = document.getElementById('steamBitumenChart').getContext('2d');
+        steamBitumenChart = new Chart(steamBitumenCtx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'Steam Injection (m³/d)',
+                    data: steamData,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    borderWidth: 2,
+                    yAxisID: 'y-steam',
+                    tension: 0.4
+                }, {
+                    label: 'Bitumen Production (bbl/d)',
+                    data: bitumenData,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    borderWidth: 2,
+                    yAxisID: 'y-bitumen',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    'y-steam': {
+                        type: 'linear',
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Steam (m³/d)'
+                        },
+                        min: 5000,
+                        max: 8000
+                    },
+                    'y-bitumen': {
+                        type: 'linear',
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Bitumen (bbl/d)'
+                        },
+                        min: 1500,
+                        max: 2800,
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+
+        // Steam Quality Chart
+        const steamQualityCtx = document.getElementById('steamQualityChart').getContext('2d');
+        steamQualityChart = new Chart(steamQualityCtx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'Steam Quality (Sm³/d)',
+                    data: steamQualityData,
+                    borderColor: 'rgb(255, 159, 64)',
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        min: 16000,
+                        max: 18000
+                    }
+                }
+            }
+        });
+
+        // Reservoir Temperature Chart
+        const reservoirTempCtx = document.getElementById('reservoirTempChart').getContext('2d');
+        reservoirTempChart = new Chart(reservoirTempCtx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'Reservoir Temp (°C)',
+                    data: reservoirTempData,
+                    borderColor: 'rgb(153, 102, 255)',
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        min: 200,
+                        max: 230
+                    }
+                }
+            }
+        });
+
+        // ESP Status Chart
+        const espStatusCtx = document.getElementById('espStatusChart').getContext('2d');
+        espStatusChart = new Chart(espStatusCtx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'ESP Status (%)',
+                    data: espStatusData,
+                    borderColor: 'rgb(255, 205, 86)',
+                    backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        min: 70,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+
+    // Initialize SignalR connection
+    async function initSignalR() {
+        connection = new signalR.HubConnectionBuilder()
+            .withUrl("/hubs/telemetry")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("ReceiveTelemetry", (message) => {
+            console.log('Received telemetry:', message.tagName, message.value);
+            updateMetrics(message);
+            updateCharts(message);
+        });
+
+        connection.on("ReceiveAlarm", (message) => {
+            showAlarm(message);
+        });
+
+        try {
+            console.log('Connecting to SignalR hub...');
+            await connection.start();
+            console.log('✅ SignalR connected successfully!');
+            updateConnectionStatus(true);
+        } catch (err) {
+            console.error('❌ SignalR connection error:', err);
+            updateConnectionStatus(false);
+            setTimeout(() => initSignalR(), 5000);
+        }
+    }
+
+    // Update connection status
+    function updateConnectionStatus(connected) {
+        const statusEl = document.getElementById('connectionStatus');
+        const boxEl = document.getElementById('connectionBox');
+        
+        if (connected) {
+            statusEl.textContent = 'Connected';
+            boxEl.className = 'small-box bg-success';
+            showToast('Connected to telemetry hub', 'success');
+        } else {
+            statusEl.textContent = 'Disconnected';
+            boxEl.className = 'small-box bg-danger';
+            showToast('Disconnected from telemetry hub', 'error');
+        }
+    }
+
+    // Update metrics storage and display
+    function updateMetrics(message) {
+        metricsMap.set(message.tagName, message);
+        
+        // Calculate SOR if we have both values
+        if (metricsMap.has('SAGD.SteamInjection') && metricsMap.has('SAGD.BitumenProduction')) {
+            const steam = metricsMap.get('SAGD.SteamInjection').value;
+            const bitumen = metricsMap.get('SAGD.BitumenProduction').value;
+            const sor = steam / bitumen;
+            
+            document.getElementById('currentSOR').textContent = sor.toFixed(2);
+            document.getElementById('steamInjection').textContent = steam.toFixed(0);
+            document.getElementById('bitumenProduction').textContent = bitumen.toFixed(0);
+            
+            // Update SOR status badges
+            updateSORStatus(sor);
+        }
+        
+        // Update table
+        updateMetricsTable();
+    }
+
+    // Update SOR status badges
+    function updateSORStatus(sor) {
+        const optimal = document.getElementById('sorStatus');
+        const warning = document.getElementById('sorWarning');
+        const critical = document.getElementById('sorCritical');
+        
+        optimal.style.display = 'none';
+        warning.style.display = 'none';
+        critical.style.display = 'none';
+        
+        if (sor >= 2.0 && sor <= 3.5) {
+            optimal.style.display = 'inline-block';
+        } else if (sor > 3.5 && sor <= 5.0) {
+            warning.style.display = 'inline-block';
+        } else {
+            critical.style.display = 'inline-block';
+        }
+    }
+
+    // Update charts with new data
+    function updateCharts(message) {
+        const now = new Date().toLocaleTimeString();
+        
+        // Update time labels
+        if (timeLabels.length >= maxDataPoints) {
+            timeLabels.shift();
+        }
+        timeLabels.push(now);
+        
+        // Route data to appropriate chart
+        switch (message.tagName) {
+            case 'SAGD.SteamInjection':
+                updateDataArray(steamData, message.value);
+                
+                // Calculate and update SOR
+                if (metricsMap.has('SAGD.BitumenProduction')) {
+                    const bitumen = metricsMap.get('SAGD.BitumenProduction').value;
+                    const sor = message.value / bitumen;
+                    updateDataArray(sorData, sor);
+                    sorChart.update('none');
+                }
+                
+                steamBitumenChart.update('none');
+                break;
+                
+            case 'SAGD.BitumenProduction':
+                updateDataArray(bitumenData, message.value);
+                
+                // Calculate and update SOR
+                if (metricsMap.has('SAGD.SteamInjection')) {
+                    const steam = metricsMap.get('SAGD.SteamInjection').value;
+                    const sor = steam / message.value;
+                    updateDataArray(sorData, sor);
+                    sorChart.update('none');
+                }
+                
+                steamBitumenChart.update('none');
+                break;
+                
+            case 'SAGD.SteamQuality':
+                updateDataArray(steamQualityData, message.value);
+                steamQualityChart.update('none');
+                break;
+                
+            case 'SAGD.ReservoirTemp':
+                updateDataArray(reservoirTempData, message.value);
+                reservoirTempChart.update('none');
+                break;
+                
+            case 'SAGD.ESPStatus':
+                updateDataArray(espStatusData, message.value);
+                espStatusChart.update('none');
+                break;
+        }
+    }
+
+    // Helper to update data arrays
+    function updateDataArray(array, value) {
+        if (array.length >= maxDataPoints) {
+            array.shift();
+        }
+        array.push(value);
+    }
+
+    // Update metrics table
+    function updateMetricsTable() {
+        const tbody = document.getElementById('metricsTable');
+        tbody.innerHTML = '';
+        
+        metricsMap.forEach((msg, tagName) => {
+            if (tagName.startsWith('SAGD.')) {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>${tagName.replace('SAGD.', '')}</strong></td>
+                    <td><span class="badge badge-info">${msg.value.toFixed(2)}</span></td>
+                    <td>${msg.unit || '--'}</td>
+                    <td><small>${new Date(msg.timestamp).toLocaleString()}</small></td>
+                    <td>${msg.quality === 192 ? '<span class="badge badge-success">Good</span>' : '<span class="badge badge-danger">Bad</span>'}</td>
+                `;
+            }
+        });
+        
+        if (tbody.rows.length === 0) {
+            const row = tbody.insertRow();
+            row.innerHTML = '<td colspan="5" class="text-center">No SAGD data yet...</td>';
+        }
+    }
+
+    // Show alarm notification
+    function showAlarm(alarm) {
+        const severity = alarm.severity === 4 ? 'error' : 'warning';
+        showToast(`⚠️ ${alarm.tagName}: ${alarm.type} alarm! Value: ${alarm.value.toFixed(2)}`, severity);
+    }
+
+    // Toast notifications
+    function showToast(message, type = 'info') {
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            positionClass: 'toast-top-right',
+            timeOut: 5000
+        };
+        toastr[type](message);
+    }
+</script>
+

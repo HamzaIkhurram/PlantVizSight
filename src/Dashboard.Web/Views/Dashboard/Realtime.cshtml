@@ -1,0 +1,378 @@
+@{
+    ViewData["Title"] = "Real-Time Monitoring";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Content Header -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-chart-line"></i> Real-Time Monitoring</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/">Home</a></li>
+                    <li class="breadcrumb-item active">Real-Time</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        
+        <!-- Status Cards -->
+        <div class="row">
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3 id="connectionStatus">Connecting...</h3>
+                        <p>SignalR Connection</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-plug"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3 id="tagCount">0</h3>
+                        <p>Active Tags</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3 style="color: white;" id="alarmCount">0</h3>
+                        <p style="color: white;">Active Alarms</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3 id="updateRate">--</h3>
+                        <p>Updates/sec</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-chart-area"></i> Temperature Trend</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="temperatureChart" style="height: 250px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-chart-line"></i> Pressure Trend</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="pressureChart" style="height: 250px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tag Values Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-table"></i> Live Tag Values</h3>
+                        <div class="card-tools">
+                            <div class="input-group input-group-sm" style="width: 250px;">
+                                <input type="text" id="tagSearch" class="form-control float-right" placeholder="Search tags...">
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-default">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body table-responsive p-0" style="height: 400px;">
+                        <table class="table table-head-fixed text-nowrap table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tag Name</th>
+                                    <th>Current Value</th>
+                                    <th>Unit</th>
+                                    <th>Timestamp</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tagTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        <i class="fas fa-spinner fa-spin"></i> Connecting to SignalR...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alarms -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card card-danger">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-exclamation-triangle"></i> Active Alarms</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="alarmsList">
+                            <p class="text-muted">No active alarms</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        console.log('SignalR library loaded:', typeof signalR !== 'undefined');
+    </script>
+    <script>
+        let connection = null;
+        let temperatureChart = null;
+        let pressureChart = null;
+        const tempData = { labels: [], values: [] };
+        const pressData = { labels: [], values: [] };
+        const maxDataPoints = 20;
+
+        // Initialize Charts
+        function initCharts() {
+            const tempCtx = document.getElementById('temperatureChart').getContext('2d');
+            temperatureChart = new Chart(tempCtx, {
+                type: 'line',
+                data: {
+                    labels: tempData.labels,
+                    datasets: [{
+                        label: 'Temperature (°C)',
+                        data: tempData.values,
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+
+            const pressCtx = document.getElementById('pressureChart').getContext('2d');
+            pressureChart = new Chart(pressCtx, {
+                type: 'line',
+                data: {
+                    labels: pressData.labels,
+                    datasets: [{
+                        label: 'Pressure (PSI)',
+                        data: pressData.values,
+                        borderColor: '#17a2b8',
+                        backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+        }
+
+        // Initialize SignalR
+        async function initSignalR() {
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("/hubs/telemetry")
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on("ReceiveTelemetry", (message) => {
+                updateTagValue(message.tagName, message.value, message.timestamp);
+                updateChart(message.tagName, message.value, message.timestamp);
+            });
+
+            connection.on("ReceiveAlarm", (message) => {
+                showAlarm(message);
+            });
+
+            try {
+                console.log('Attempting to connect to SignalR hub at /hubs/telemetry...');
+                await connection.start();
+                console.log('SignalR connected successfully!');
+                document.getElementById('connectionStatus').textContent = 'Connected';
+                document.getElementById('connectionStatus').parentElement.parentElement.className = 'small-box bg-success';
+                showToast('Connected to telemetry hub', 'success');
+            } catch (err) {
+                console.error('SignalR connection error:', err);
+                document.getElementById('connectionStatus').textContent = 'Disconnected';
+                document.getElementById('connectionStatus').parentElement.parentElement.className = 'small-box bg-danger';
+                showToast('Failed to connect: ' + err.message, 'error');
+                
+                // Retry after 5 seconds
+                setTimeout(() => {
+                    console.log('Retrying SignalR connection...');
+                    initSignalR();
+                }, 5000);
+            }
+        }
+
+        function updateTagValue(tagName, value, timestamp) {
+            console.log('Received telemetry:', tagName, value, timestamp);
+            
+            let row = document.querySelector(`tr[data-tag="${tagName}"]`);
+            if (!row) {
+                const tbody = document.getElementById('tagTableBody');
+                if (tbody.querySelector('td[colspan]')) {
+                    tbody.innerHTML = '';
+                }
+                row = tbody.insertRow();
+                row.setAttribute('data-tag', tagName);
+                row.innerHTML = `
+                    <td class="font-weight-bold">${tagName}</td>
+                    <td class="tag-value">--</td>
+                    <td class="text-muted">°C / PSI</td>
+                    <td class="tag-timestamp">--</td>
+                    <td><span class="badge badge-success">Good</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewHistory('${tagName}')">
+                            <i class="fas fa-history"></i>
+                        </button>
+                    </td>
+                `;
+            }
+            
+            row.querySelector('.tag-value').textContent = value.toFixed(2);
+            row.querySelector('.tag-timestamp').textContent = new Date(timestamp).toLocaleTimeString();
+            row.classList.add('table-info');
+            setTimeout(() => row.classList.remove('table-info'), 300);
+
+            const count = document.querySelectorAll('#tagTableBody tr').length;
+            document.getElementById('tagCount').textContent = count;
+        }
+
+        function updateChart(tagName, value, timestamp) {
+            const time = new Date(timestamp).toLocaleTimeString();
+            
+            if (tagName.includes('Temp') || tagName.includes('Temperature')) {
+                tempData.labels.push(time);
+                tempData.values.push(value);
+                if (tempData.labels.length > maxDataPoints) {
+                    tempData.labels.shift();
+                    tempData.values.shift();
+                }
+                if (temperatureChart) temperatureChart.update();
+            }
+            
+            if (tagName.includes('Press') || tagName.includes('Pressure')) {
+                pressData.labels.push(time);
+                pressData.values.push(value);
+                if (pressData.labels.length > maxDataPoints) {
+                    pressData.labels.shift();
+                    pressData.values.shift();
+                }
+                if (pressureChart) pressureChart.update();
+            }
+        }
+
+        function showAlarm(message) {
+            const alarmsList = document.getElementById('alarmsList');
+            if (alarmsList.querySelector('.text-muted')) {
+                alarmsList.innerHTML = '';
+            }
+            
+            const alarmEl = document.createElement('div');
+            alarmEl.className = 'alert alert-danger alert-dismissible';
+            alarmEl.innerHTML = `
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <h5><i class="icon fas fa-ban"></i> ${message.type} - Severity ${message.severity}</h5>
+                ${message.tagName}: ${message.state} at ${new Date(message.timestamp).toLocaleTimeString()}
+            `;
+            alarmsList.insertBefore(alarmEl, alarmsList.firstChild);
+            
+            const count = alarmsList.querySelectorAll('.alert').length;
+            document.getElementById('alarmCount').textContent = count;
+            
+            showToast(`${message.tagName} alarm: ${message.state}`, 'error');
+        }
+
+        function viewHistory(tagName) {
+            showToast('History for ' + tagName, 'info');
+        }
+
+        // Search functionality
+        document.getElementById('tagSearch').addEventListener('keyup', function() {
+            const filter = this.value.toUpperCase();
+            const rows = document.querySelectorAll('#tagTableBody tr');
+            rows.forEach(row => {
+                const tagName = row.getAttribute('data-tag') || '';
+                row.style.display = tagName.toUpperCase().includes(filter) ? '' : 'none';
+            });
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            initSignalR();
+        });
+    </script>
+}
