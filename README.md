@@ -1,23 +1,21 @@
-# PlantVizSight
+# PlantSightVizu
 
-Real-time SCADA dashboard I built to learn more about .NET and C#. Started this project to get hands-on experience with industrial monitoring systems and process control.
+I wanted to further develop my understanding with .NET and C#, so I built this real-time SCADA dashboard to get hands-on experience with industrial monitoring systems and process control.
 
-## What I learned
+The core learning was around SAGD SOR real-time analytics. I focused on building a dashboard that calculates and visualizes Steam-to-Oil Ratio (SOR) on the fly using live process data.
 
-The main focus was building a real-time Steam-to-Oil Ratio (SOR) analytics dashboard for SAGD operations. This was the most interesting part - calculating SOR on the fly and visualizing it with live charts.
+## SOR Calculation
 
-### SOR Calculation
-
-I used this formula:
+For calculating SOR, I used this formula:
 ```
 SOR = Steam Injected (m³/d) ÷ Bitumen Produced (bbl/d)
 ```
 
-For the simulation, I set up:
-- **Steam Injection**: Base around 6,495 m³/d with sine wave variation and random noise
-- **Bitumen Production**: Base around 2,150 bbl/d, inversely correlated with steam (when steam goes up, bitumen follows with a delay)
+To create the live simulation, I developed a Modbus simulator that generates realistic estimates:
+- **Steam Injection Estimate**: Base value around 6,495 m³/d with sine wave variation (amplitude ~300) and random noise, bounded between 5,000-8,000 m³/d
+- **Bitumen Production Estimate**: Base value around 2,150 bbl/d with inverse correlation to steam (phase-shifted sine wave) plus random trend and noise, bounded between 1,500-2,800 bbl/d
 
-The simulator generates realistic time-series data using sine waves, random walk, and noise to make it feel like real sensor readings from a SAGD well.
+The simulator generates realistic time-series data using sine waves, random walk trends, and noise to simulate actual sensor readings from a SAGD well. This lets you test the entire system without needing real industrial hardware.
 
 ## Tech Stack
 
