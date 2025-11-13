@@ -1,0 +1,95 @@
+{
+  "version": "1.0.0",
+  "description": "Modbus register mapping for simulator and acquisition",
+  "devices": [
+    {
+      "name": "UnitA",
+      "host": "127.0.0.1",
+      "port": 5020,
+      "registers": {
+        "holding": [
+          {
+            "address": 0,
+            "name": "UnitA.Temp",
+            "description": "Temperature sensor",
+            "dataType": "float",
+            "units": "degC",
+            "min": 0,
+            "max": 200
+          },
+          {
+            "address": 1,
+            "name": "UnitA.Pressure",
+            "description": "Pressure transmitter",
+            "dataType": "float",
+            "units": "bar",
+            "min": 0,
+            "max": 50
+          },
+          {
+            "address": 2,
+            "name": "UnitA.Flow",
+            "description": "Flow meter",
+            "dataType": "float",
+            "units": "m3/h",
+            "min": 0,
+            "max": 500
+          },
+          {
+            "address": 100,
+            "name": "UnitA.Temp.SP",
+            "description": "Temperature setpoint (write)",
+            "dataType": "float",
+            "units": "degC",
+            "writable": true
+          },
+          {
+            "address": 101,
+            "name": "UnitA.Pressure.SP",
+            "description": "Pressure setpoint (write)",
+            "dataType": "float",
+            "units": "bar",
+            "writable": true
+          },
+          {
+            "address": 102,
+            "name": "UnitA.Flow.SP",
+            "description": "Flow setpoint (write)",
+            "dataType": "float",
+            "units": "m3/h",
+            "writable": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "UnitB",
+      "host": "127.0.0.1",
+      "port": 5021,
+      "registers": {
+        "holding": [
+          {
+            "address": 3,
+            "name": "UnitB.Level",
+            "description": "Tank level",
+            "dataType": "float",
+            "units": "%",
+            "min": 0,
+            "max": 100
+          },
+          {
+            "address": 103,
+            "name": "UnitB.Level.SP",
+            "description": "Level setpoint (write)",
+            "dataType": "float",
+            "units": "%",
+            "writable": true
+          }
+        ]
+      }
+    }
+  ]
+}
+
+
+
