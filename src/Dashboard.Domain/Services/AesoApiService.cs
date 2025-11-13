@@ -1,3 +1,4 @@
+// AesoApiService.cs - Service for fetching live data from AESO Current Supply Demand API
 using Dashboard.Domain.Models;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
@@ -6,10 +7,6 @@ using Microsoft.Extensions.Options;
 
 namespace Dashboard.Domain.Services;
 
-/// <summary>
-/// Service for fetching live data from AESO Current Supply Demand API
-/// FAANG-level implementation with retry logic, proper error handling, and resilience
-/// </summary>
 public class AesoApiService
 {
     private readonly HttpClient _httpClient;
@@ -24,25 +21,15 @@ public class AesoApiService
         _httpClient = httpClient;
         _logger = logger;
         _config = config?.Value ?? new AesoApiConfiguration();
-
-        // Configure HttpClient timeout
         _httpClient.Timeout = TimeSpan.FromSeconds(_config.TimeoutSeconds);
-        
         _logger.LogInformation("AesoApiService initialized. API Key configured: {HasKey}", 
             !string.IsNullOrEmpty(_config.SubscriptionKey));
     }
 
-    /// <summary>
-    /// Fetch current generation data for all AIES assets greater than 5 MW
-    /// FAANG-level: Implements retry logic, proper error handling, and detailed diagnostics
-    /// </summary>
-    /// <param name="assetIds">Optional comma-separated asset IDs (up to 20)</param>
-    /// <returns>AESO Asset Generation Report</returns>
     public async Task<AesoAssetGenerationReport?> GetCurrentSupplyDemandAsync(string? assetIds = null)
     {
         try
         {
-            // Check if subscription key is configured
             if (string.IsNullOrEmpty(_config.SubscriptionKey))
             {
                 _logger.LogError("AESO API Subscription Key is not configured. Please add it to appsettings.json");
@@ -59,7 +46,6 @@ public class AesoApiService
 
             _logger.LogInformation("Fetching AESO data from: {Url}", url);
 
-            // Execute request with manual retry logic
             HttpResponseMessage? response = null;
             Exception? lastException = null;
 
@@ -67,7 +53,6 @@ public class AesoApiService
             {
                 try
                 {
-                    // Create request with subscription key header
                     var request = new HttpRequestMessage(HttpMethod.Get, url);
                     request.Headers.Add("API-KEY", _config.SubscriptionKey);
                     request.Headers.Add("Cache-Control", "no-cache");
@@ -76,7 +61,6 @@ public class AesoApiService
 
                     response = await _httpClient.SendAsync(request);
                     
-                    // Enhanced error logging
                     if (!response.IsSuccessStatusCode)
                     {
                         var errorContent = await response.Content.ReadAsStringAsync();
@@ -84,7 +68,6 @@ public class AesoApiService
                             "AESO API returned {StatusCode}: {ErrorContent}",
                             response.StatusCode, errorContent);
                         
-                        // Retry on server errors or rate limiting
                         if ((int)response.StatusCode >= 500 || response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                         {
                             if (attempt < _config.RetryAttempts)
@@ -99,7 +82,7 @@ public class AesoApiService
                     }
                     
                     response.EnsureSuccessStatusCode();
-                    break; // Success!
+                    break;
                 }
                 catch (HttpRequestException ex) when (attempt < _config.RetryAttempts)
                 {
@@ -126,7 +109,6 @@ public class AesoApiService
 
             var data = wrapper.@return;
 
-            // Map API response to domain model
             var report = new AesoAssetGenerationReport
             {
                 LastUpdatedDatetimeUtc = data.last_updated_datetime_utc,
@@ -147,7 +129,6 @@ public class AesoApiService
         }
         catch (InvalidOperationException)
         {
-            // Re-throw configuration errors
             throw;
         }
         catch (HttpRequestException ex)
@@ -167,9 +148,6 @@ public class AesoApiService
         }
     }
 
-    /// <summary>
-    /// Get assets filtered by fuel type
-    /// </summary>
     public async Task<List<AesoAsset>> GetAssetsByFuelTypeAsync(string fuelType)
     {
         var report = await GetCurrentSupplyDemandAsync();
@@ -180,9 +158,6 @@ public class AesoApiService
             .ToList();
     }
 
-    /// <summary>
-    /// Get total generation by fuel type
-    /// </summary>
     public async Task<Dictionary<string, int>> GetGenerationByFuelTypeAsync()
     {
         var report = await GetCurrentSupplyDemandAsync();
@@ -196,14 +171,10 @@ public class AesoApiService
             );
     }
 
-    /// <summary>
-    /// Get current supply demand summary from v2 API
-    /// </summary>
     public async Task<AesoV2SummaryReport?> GetCurrentSummaryV2Async()
     {
         try
         {
-            // Check if subscription key is configured
             if (string.IsNullOrEmpty(_config.SubscriptionKey))
             {
                 _logger.LogError("AESO API Subscription Key is not configured");
@@ -216,7 +187,6 @@ public class AesoApiService
 
             _logger.LogInformation("Fetching AESO v2 summary from: {Url}", url);
 
-            // Execute request with manual retry logic
             HttpResponseMessage? response = null;
             Exception? lastException = null;
 
@@ -278,7 +248,6 @@ public class AesoApiService
 
             var data = wrapper.@return;
 
-            // Map API response to domain model
             var report = new AesoV2SummaryReport
             {
                 LastUpdatedDatetimeUtc = data.effective_datetime_utc,
@@ -286,7 +255,7 @@ public class AesoApiService
                 TotalMaxGeneration = data.total_max_generation_capability,
                 TotalNetGeneration = data.total_net_generation,
                 NetToGridGeneration = data.net_to_grid_generation,
-                DispatchedContingencyReserve = data.dispatched_contigency_reserve_total, // Note: API has typo
+                DispatchedContingencyReserve = data.dispatched_contigency_reserve_total,
                 LssoPriceSettingDispatchedGeneration = data.lsso_price_setting_dispatched_generation,
                 AlbertaInternalLoad = data.alberta_internal_load,
                 ContingentEvents = data.contingent_events,
@@ -323,17 +292,10 @@ public class AesoApiService
         }
     }
 
-    /// <summary>
-    /// Get pool price data for a date range
-    /// </summary>
-    /// <param name="startDate">Start date (yyyy-MM-dd), between 2000-01-01 and current date</param>
-    /// <param name="endDate">Optional end date (yyyy-MM-dd). If omitted, only startDate data is returned. Maximum 1 year range.</param>
-    /// <returns>Pool price report with hourly data</returns>
     public async Task<AesoPoolPriceReport?> GetPoolPriceAsync(string startDate, string? endDate = null)
     {
         try
         {
-            // Validate subscription key
             if (string.IsNullOrEmpty(_config.SubscriptionKey))
             {
                 _logger.LogError("AESO API Subscription Key is not configured");
@@ -342,7 +304,6 @@ public class AesoApiService
                     "Get your key from https://api.aeso.ca/ and add it to AesoApi:SubscriptionKey in appsettings.json");
             }
 
-            // Validate date format
             if (!DateTime.TryParse(startDate, out var startDateParsed))
             {
                 throw new ArgumentException($"Invalid startDate format: {startDate}. Expected yyyy-MM-dd");
@@ -353,7 +314,6 @@ public class AesoApiService
                 throw new ArgumentException($"startDate must be between 2000-01-01 and today's date");
             }
 
-            // Build URL - Pool Price API is v1.1
             var url = "https://apimgw.aeso.ca/public/poolprice-api/v1.1/price/poolPrice?startDate=" + startDate;
             
             if (!string.IsNullOrEmpty(endDate))
@@ -378,7 +338,6 @@ public class AesoApiService
 
             _logger.LogInformation("Fetching AESO Pool Price from: {Url}", url);
 
-            // Execute request with manual retry logic
             HttpResponseMessage? response = null;
             Exception? lastException = null;
 
@@ -440,7 +399,6 @@ public class AesoApiService
 
             var data = wrapper.@return.PoolPriceReport;
 
-            // Map to domain model
             var report = new AesoPoolPriceReport
             {
                 PriceData = data.Select(p => new AesoPoolPriceEntry
@@ -482,9 +440,6 @@ public class AesoApiService
     }
 }
 
-/// <summary>
-/// Wrapper for AESO API response
-/// </summary>
 internal class AesoApiWrapper
 {
     public string? timestamp { get; set; }
@@ -492,9 +447,6 @@ internal class AesoApiWrapper
     public AesoApiResponse? @return { get; set; }
 }
 
-/// <summary>
-/// Internal DTO for mapping AESO API JSON response (snake_case)
-/// </summary>
 internal class AesoApiResponse
 {
     public string? last_updated_datetime_utc { get; set; }
@@ -512,9 +464,6 @@ internal class AesoApiAsset
     public int dispatched_contingency_reserve { get; set; }
 }
 
-/// <summary>
-/// Wrapper for AESO v2 API response
-/// </summary>
 internal class AesoV2Wrapper
 {
     public string? timestamp { get; set; }
@@ -522,9 +471,6 @@ internal class AesoV2Wrapper
     public AesoV2Response? @return { get; set; }
 }
 
-/// <summary>
-/// Internal DTO for v2 summary response
-/// </summary>
 internal class AesoV2Response
 {
     public string? effective_datetime_utc { get; set; }
@@ -532,7 +478,7 @@ internal class AesoV2Response
     public int total_max_generation_capability { get; set; }
     public int total_net_generation { get; set; }
     public int net_to_grid_generation { get; set; }
-    public int dispatched_contigency_reserve_total { get; set; } // Note: API has typo "contigency"
+    public int dispatched_contigency_reserve_total { get; set; }
     public int lsso_price_setting_dispatched_generation { get; set; }
     public int alberta_internal_load { get; set; }
     public int contingent_events { get; set; }
@@ -547,9 +493,6 @@ internal class AesoV2FuelType
     public int aggregated_dispatched_contingency_reserve { get; set; }
 }
 
-/// <summary>
-/// Wrapper for Pool Price API response
-/// </summary>
 internal class AesoPoolPriceWrapper
 {
     public string? timestamp { get; set; }
@@ -557,19 +500,12 @@ internal class AesoPoolPriceWrapper
     public AesoPoolPriceResponse? @return { get; set; }
 }
 
-/// <summary>
-/// Internal DTO for Pool Price response
-/// Note: The property name in the API is "Pool Price Report" with spaces!
-/// </summary>
 internal class AesoPoolPriceResponse
 {
     [JsonPropertyName("Pool Price Report")]
     public List<AesoPoolPriceData>? PoolPriceReport { get; set; }
 }
 
-/// <summary>
-/// Internal DTO for individual pool price data point
-/// </summary>
 internal class AesoPoolPriceData
 {
     public string? begin_datetime_utc { get; set; }
@@ -578,4 +514,3 @@ internal class AesoPoolPriceData
     public string? forecast_pool_price { get; set; }
     public string? rolling_30day_avg { get; set; }
 }
-
