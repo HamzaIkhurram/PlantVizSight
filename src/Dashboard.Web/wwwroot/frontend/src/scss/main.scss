@@ -1,0 +1,234 @@
+// AdminLTE + Bootstrap + Font Awesome
+@import '~admin-lte/dist/css/adminlte.min.css';
+@import '~@fortawesome/fontawesome-free/css/all.min.css';
+@import '~bootstrap/dist/css/bootstrap.min.css';
+@import '~toastr/build/toastr.min.css';
+@import '~sweetalert2/dist/sweetalert2.min.css';
+
+// Custom Variables
+:root {
+  --primary: #007bff;
+  --success: #28a745;
+  --info: #17a2b8;
+  --warning: #ffc107;
+  --danger: #dc3545;
+  --dark: #343a40;
+  --sidebar-width: 250px;
+}
+
+// Custom Styles
+body {
+  font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.sidebar-dark-primary {
+  background-color: #343a40 !important;
+}
+
+.brand-link {
+  border-bottom: 1px solid #4b545c;
+}
+
+.nav-sidebar .nav-link {
+  border-radius: 0.25rem;
+  margin: 0.2rem 0.5rem;
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  &.active {
+    background-color: #007bff;
+    color: #fff;
+  }
+}
+
+.small-box {
+  border-radius: 0.25rem;
+  box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,.15), 0 6px 20px rgba(0,0,0,.12);
+  }
+}
+
+.info-box {
+  min-height: 90px;
+  border-radius: 0.25rem;
+  box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,.15), 0 6px 20px rgba(0,0,0,.12);
+  }
+}
+
+.card {
+  box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,.15), 0 6px 20px rgba(0,0,0,.12);
+  }
+}
+
+// Chart containers
+.chart-container {
+  position: relative;
+  height: 300px;
+  
+  &.large {
+    height: 400px;
+  }
+}
+
+// Custom animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+// Loading overlay
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  
+  &.hidden {
+    display: none;
+  }
+}
+
+.spinner-border-lg {
+  width: 3rem;
+  height: 3rem;
+}
+
+// Table enhancements
+.table {
+  &.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+}
+
+// Badge enhancements
+.badge-status {
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+  font-weight: 600;
+}
+
+// Price badges
+.price-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  
+  &.price-low {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  
+  &.price-medium {
+    background: #fef08a;
+    color: #854d0e;
+  }
+  
+  &.price-high {
+    background: #fecaca;
+    color: #991b1b;
+  }
+}
+
+// Fuel type badges
+.fuel-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  
+  &.fuel-GAS, &.fuel-COGENERATION, &.fuel-COMBINED, &.fuel-SIMPLE {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  
+  &.fuel-HYDRO {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  
+  &.fuel-WIND {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  
+  &.fuel-COAL {
+    background: #f3f4f6;
+    color: #1f2937;
+  }
+  
+  &.fuel-SOLAR {
+    background: #fef08a;
+    color: #854d0e;
+  }
+  
+  &.fuel-ENERGY {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  
+  &.fuel-OTHER {
+    background: #f3e8ff;
+    color: #6b21a8;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 15px;
+  }
+  
+  .small-box {
+    margin-bottom: 15px;
+  }
+  
+  .chart-container {
+    height: 250px;
+  }
+}
+
+// Print styles
+@media print {
+  .sidebar, .main-header, .main-footer {
+    display: none;
+  }
+  
+  .content-wrapper {
+    margin-left: 0;
+  }
+}
+
