@@ -1,26 +1,36 @@
-# PlantSight
+# PlantVizSight
 
-Real-time SCADA dashboard for monitoring industrial processes and SAGD operations. Built during my time working with process control systems.
+Real-time SCADA dashboard I built to learn more about .NET and C#. Started this project to get hands-on experience with industrial monitoring systems and process control.
 
-## What it does
+## What I learned
 
-- Live telemetry from Modbus devices (simulated for demo)
-- Alarm monitoring with configurable thresholds
-- AESO power grid data integration
-- SAGD well analytics and steam-to-oil ratio tracking
-- Real-time charts using SignalR
+The main focus was building a real-time Steam-to-Oil Ratio (SOR) analytics dashboard for SAGD operations. This was the most interesting part - calculating SOR on the fly and visualizing it with live charts.
 
-## Tech stack
+### SOR Calculation
+
+I used this formula:
+```
+SOR = Steam Injected (m³/d) ÷ Bitumen Produced (bbl/d)
+```
+
+For the simulation, I set up:
+- **Steam Injection**: Base around 6,495 m³/d with sine wave variation and random noise
+- **Bitumen Production**: Base around 2,150 bbl/d, inversely correlated with steam (when steam goes up, bitumen follows with a delay)
+
+The simulator generates realistic time-series data using sine waves, random walk, and noise to make it feel like real sensor readings from a SAGD well.
+
+## Tech Stack
 
 - ASP.NET Core 9.0
 - SignalR for real-time updates
-- PostgreSQL/Supabase
-- AdminLTE dashboard theme
-- Chart.js for visualization
+- Modbus TCP simulator (no real hardware needed)
+- PostgreSQL/Supabase for data storage
+- AdminLTE for the dashboard UI
+- Chart.js for live charts
 
-## Getting started
+## Getting Started
 
-You'll need the .NET 9.0 SDK installed.
+You'll need .NET 9.0 SDK:
 
 ```bash
 dotnet restore
@@ -28,24 +38,20 @@ cd src/Dashboard.Web
 dotnet run
 ```
 
-Open `http://localhost:8080` in your browser.
+Then open `http://localhost:8080` in your browser.
 
-## Project structure
+## Project Structure
 
-- `src/Dashboard.Web` - main web app
-- `src/Dashboard.Domain` - business logic
-- `src/Dashboard.Simulator` - Modbus TCP simulator
-- `src/Dashboard.Acquisition` - data acquisition service
-- `src/Dashboard.Persistence` - database stuff
+- `src/Dashboard.Web` - Main web application
+- `src/Dashboard.Domain` - Business logic and AESO API integration
+- `src/Dashboard.Simulator` - Modbus TCP simulator that generates SAGD process data
+- `src/Dashboard.Acquisition` - Data acquisition service
+- `src/Dashboard.Persistence` - Database layer
 
 ## Configuration
 
-Copy `appsettings.example.json` to `appsettings.json` and add your:
-- Database connection string
-- AESO API key (if you want live power data)
+Copy `appsettings.example.json` to `appsettings.json` and add your database connection string and AESO API key if you want live power grid data.
 
 ## Notes
 
-This was a learning project to better understand industrial monitoring systems. The Modbus simulator generates realistic SAGD process data for testing without needing actual hardware.
-
-Feel free to use this as a starting point for your own projects.
+This was a learning project. The Modbus simulator lets you test everything without needing actual industrial hardware. All the SAGD parameters (steam injection, bitumen production, reservoir temp, ESP status, etc.) are simulated to give realistic data for the analytics dashboard.
