@@ -62,8 +62,11 @@ bld/
 .env
 .env.local
 .env.*.local
+appsettings.json
 appsettings.Development.json
 appsettings.Local.json
+appsettings.*.json
+!appsettings.example.json
 secrets.json
 
 # Rider
