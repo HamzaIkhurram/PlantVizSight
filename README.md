@@ -56,6 +56,22 @@ The main dashboard provides real-time monitoring of all 66 well pairs with live 
 
 **Heatmaps & Anomaly Detection** - Pad-level performance heatmaps and top 10 well pairs ranked by production rate. Anomaly detection identifies wells operating outside optimal parameters.
 
+### SAGD SOR Analytics Dashboard
+
+Real-time Steam-to-Oil Ratio analytics dashboard for monitoring SAGD operations and process efficiency.
+
+![SAGD SOR Dashboard Overview](images/SAGD_SOR_1.png.png)
+
+**Real-Time SOR Monitoring** - Live calculation and visualization of Steam-to-Oil Ratio with operational status indicators and trend analysis.
+
+![SAGD SOR Analytics](images/SAGD_SOR_2.png.png)
+
+**Performance Metrics & Trends** - Detailed analytics showing SOR efficiency, production rates, and operational parameters over time.
+
+![SAGD SOR Detailed View](images/SAGD_SOR_3%20(1).png)
+
+**Process Control Dashboard** - Comprehensive view of SAGD operations including steam injection rates, bitumen production, and system health metrics.
+
 ## Project Structure
 
 - `src/Dashboard.Web` - Main web application
