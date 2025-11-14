@@ -38,6 +38,24 @@ dotnet run
 
 Then open `http://localhost:8080` in your browser.
 
+## Screenshots
+
+### Well Pair Performance Dashboard
+
+The main dashboard provides real-time monitoring of all 66 well pairs with live KPIs and performance analytics.
+
+![Well Pair Performance Dashboard Overview](images/well-pair-dashboard-overview.png)
+
+**Live Well Pair Performance Grid** - Real-time status for all well pairs including subcool temperature, wellhead pressure, production rates, and SOR ratios.
+
+![Well Pair Performance Analytics](images/well-pair-analytics.png)
+
+**Performance Analytics** - Four analytical views showing production distribution, temperature control, pressure-production correlation, and SOR efficiency comparison across facilities.
+
+![Well Pair Heatmaps and Rankings](images/well-pair-heatmaps.png)
+
+**Heatmaps & Anomaly Detection** - Pad-level performance heatmaps and top 10 well pairs ranked by production rate. Anomaly detection identifies wells operating outside optimal parameters.
+
 ## Project Structure
 
 - `src/Dashboard.Web` - Main web application
