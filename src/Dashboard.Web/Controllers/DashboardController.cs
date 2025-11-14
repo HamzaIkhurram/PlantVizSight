@@ -1,4 +1,6 @@
 // DashboardController.cs - Dashboard view controllers
+using Dashboard.Domain.Models;
+using Dashboard.Simulator;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Dashboard.Web.Controllers;
@@ -6,10 +8,12 @@ namespace Dashboard.Web.Controllers;
 public class DashboardController : Controller
 {
     private readonly ILogger<DashboardController> _logger;
+    private readonly WellPairSimulator _wellPairSimulator;
 
-    public DashboardController(ILogger<DashboardController> logger)
+    public DashboardController(ILogger<DashboardController> logger, WellPairSimulator wellPairSimulator)
     {
         _logger = logger;
+        _wellPairSimulator = wellPairSimulator;
     }
 
     public IActionResult Index()
@@ -39,6 +43,25 @@ public class DashboardController : Controller
     public IActionResult SOR()
     {
         _logger.LogInformation("SAGD SOR dashboard accessed");
+        
+        var config = new SorDashboardConfig();
+        ViewBag.Config = config;
+        
+        return View();
+    }
+
+    public IActionResult WellPairPerformance()
+    {
+        _logger.LogInformation("Well Pair Performance dashboard accessed");
+        
+        var wellPairs = _wellPairSimulator.GetAllWellPairs();
+        var facilities = wellPairs.Select(wp => wp.Facility).Distinct().OrderBy(f => f).ToList();
+        var config = new WellPairDashboardConfig();
+        
+        ViewBag.WellPairCount = wellPairs.Count;
+        ViewBag.Facilities = facilities;
+        ViewBag.Config = config;
+        
         return View();
     }
 }

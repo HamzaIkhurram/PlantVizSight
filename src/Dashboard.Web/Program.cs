@@ -35,6 +35,10 @@ builder.Services.AddSingleton<ModbusSimulator>();
 
 builder.Services.AddSingleton<ModbusAcquisition>();
 
+builder.Services.AddSingleton<WellPairSimulator>();
+
+builder.Services.AddSingleton<WellPairBroadcaster>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -122,6 +126,15 @@ var acquisition = app.Services.GetRequiredService<ModbusAcquisition>();
 acquisition.Start(tags, alarmRules, simulator.ReadHoldingRegister);
 logger.LogInformation("Modbus acquisition started with {TagCount} tags and {AlarmCount} alarm rules", 
     tags.Count, alarmRules.Count);
+
+var wellPairSimulator = app.Services.GetRequiredService<WellPairSimulator>();
+wellPairSimulator.Start();
+logger.LogInformation("Well pair simulator started with {WellPairCount} well pairs", 
+    wellPairSimulator.GetAllWellPairs().Count);
+
+var wellPairBroadcaster = app.Services.GetRequiredService<WellPairBroadcaster>();
+wellPairBroadcaster.Start();
+logger.LogInformation("Well pair broadcaster started");
 
 app.Run();
 

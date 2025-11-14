@@ -1,0 +1,599 @@
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Well Pair Performance Dashboard";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-oil-well"></i> Well Pair Performance Dashboard</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/">Home</a></li>
+                    <li class="breadcrumb-item active">Well Pair Performance</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        
+        <!-- KPI Summary Dashboard -->
+        <div class="row">
+            <div class="col-lg-2 col-6">
+                <div class="small-box bg-primary">
+                    <div class="inner">
+                        <h3 id="totalBitumenProduction">--</h3>
+                        <p>Total Bitumen Production</p>
+                    </div>
+                    <div class="icon"><i class="fas fa-oil-can"></i></div>
+                    <a href="#" class="small-box-footer">bbl/d <i class="fas fa-chart-line"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-2 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3 id="totalSteamInjection" style="color: white;">--</h3>
+                        <p style="color: white;">Total Steam Injection</p>
+                    </div>
+                    <div class="icon"><i class="fas fa-fire"></i></div>
+                    <a href="#" class="small-box-footer" style="color: white;">Sm³/d <i class="fas fa-fire"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-2 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3 id="avgSubcoolTemp">--</h3>
+                        <p>Avg Subcool Temp</p>
+                    </div>
+                    <div class="icon"><i class="fas fa-thermometer-half"></i></div>
+                    <a href="#" class="small-box-footer">°C <i class="fas fa-check-circle"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-2 col-6">
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3 id="systemUptime">--</h3>
+                        <p>System Uptime</p>
+                    </div>
+                    <div class="icon"><i class="fas fa-chart-pie"></i></div>
+                    <a href="#" class="small-box-footer">% <i class="fas fa-clock"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-2 col-6">
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3 id="avgSor">--</h3>
+                        <p>Average SOR</p>
+                    </div>
+                    <div class="icon"><i class="fas fa-percentage"></i></div>
+                    <a href="#" class="small-box-footer">Ratio <i class="fas fa-info-circle"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-2 col-6">
+                <div class="small-box bg-secondary">
+                    <div class="inner">
+                        <h3 id="activeWellPairs">--</h3>
+                        <p>Active Well Pairs</p>
+                    </div>
+                    <div class="icon"><i class="fas fa-industry"></i></div>
+                    <a href="#" class="small-box-footer">Pairs <i class="fas fa-list"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Well Pair Performance Grid -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-table"></i> Live Well Pair Performance Grid (<span id="wellPairCount">--</span> Pairs)</h3>
+                        <div class="card-tools">
+                            <div class="input-group input-group-sm" style="width: 250px;">
+                                <input type="text" id="wellPairSearch" class="form-control float-right" placeholder="Search well pairs...">
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-default"><i class="fas fa-search"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body table-responsive p-0" style="max-height: 500px;">
+                        <table class="table table-head-fixed text-nowrap table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Well Pair</th>
+                                    <th>Facility</th>
+                                    <th>Pad</th>
+                                    <th>Subcool Temp (°C)</th>
+                                    <th>Wellhead Pressure (kPa)</th>
+                                    <th>Production Rate (bbl/d)</th>
+                                    <th>Steam Injection (Sm³/d)</th>
+                                    <th>SOR Ratio</th>
+                                    <th>Uptime (%)</th>
+                                    <th>Status</th>
+                                    <th>Last Update</th>
+                                </tr>
+                            </thead>
+                            <tbody id="wellPairTableBody">
+                                <tr><td colspan="11" class="text-center">Loading well pair data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Trends & Performance Analysis -->
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-chart-bar"></i> Production Distribution by Facility</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="productionDistributionChart" height="80"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-thermometer-half"></i> Temperature Control Analysis</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="temperatureControlChart" height="80"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-chart-line"></i> Pressure-Production Correlation</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="pressureProductionChart" height="80"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-chart-area"></i> SOR Efficiency Comparison</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="sorComparisonChart" height="80"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pad-Level Performance Heatmaps -->
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-th"></i> Subcool Temperature Zones Heatmap</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="subcoolHeatmapChart" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-th"></i> Production Rate Geography Heatmap</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="productionHeatmapChart" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Ranking & Anomaly Detection -->
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-trophy"></i> Top 10 Well Pairs by Production Rate</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="topWellPairsList"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-exclamation-triangle"></i> Subcool Temperature Anomalies</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="anomalyChart" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+    const facilities = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Facilities ?? new List<string>()));
+    const config = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Config ?? new { 
+        subcoolOptimalMin = 175.0, 
+        subcoolOptimalMax = 205.0, 
+        subcoolChartMin = 160.0, 
+        subcoolChartMax = 220.0, 
+        sorChartMin = 3.0, 
+        sorChartMax = 3.5, 
+        productionChartMin = 300.0, 
+        temperatureChartMin = 180.0, 
+        temperatureChartMax = 195.0, 
+        topPairsCount = 10 
+    }));
+    
+    let connection;
+    let wellPairs = [];
+    let kpiData = null;
+    let productionDistributionChart, temperatureControlChart, pressureProductionChart, sorComparisonChart;
+    let subcoolHeatmapChart, productionHeatmapChart, anomalyChart;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('wellPairCount').textContent = @ViewBag.WellPairCount ?? '--';
+        initCharts();
+        initSignalR();
+    });
+
+    function initCharts() {
+        const productionCtx = document.getElementById('productionDistributionChart').getContext('2d');
+        const facilityLabels = facilities.length > 0 ? facilities : ['Facility A', 'Facility B'];
+        productionDistributionChart = new Chart(productionCtx, {
+            type: 'bar',
+            data: {
+                labels: facilityLabels,
+                datasets: [{
+                    label: 'Avg Production (bbl/d)',
+                    data: new Array(facilityLabels.length).fill(0),
+                    backgroundColor: ['rgba(54, 162, 235, 0.8)', 'rgba(255, 99, 132, 0.8)', 'rgba(75, 192, 192, 0.8)', 'rgba(255, 159, 64, 0.8)'],
+                    borderColor: ['rgb(54, 162, 235)', 'rgb(255, 99, 132)', 'rgb(75, 192, 192)', 'rgb(255, 159, 64)'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: false, min: config.productionChartMin || 300 } }
+            }
+        });
+
+        const tempCtx = document.getElementById('temperatureControlChart').getContext('2d');
+        temperatureControlChart = new Chart(tempCtx, {
+            type: 'line',
+            data: {
+                labels: facilityLabels,
+                datasets: [{
+                    label: 'Avg Subcool Temp (°C)',
+                    data: new Array(facilityLabels.length).fill(0),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 2,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { 
+                    y: { 
+                        beginAtZero: false, 
+                        min: config.temperatureChartMin || 180, 
+                        max: config.temperatureChartMax || 195 
+                    } 
+                }
+            }
+        });
+
+        const pressureCtx = document.getElementById('pressureProductionChart').getContext('2d');
+        pressureProductionChart = new Chart(pressureCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Well Pairs',
+                    data: [],
+                    backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                    borderColor: 'rgb(153, 102, 255)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: 'Wellhead Pressure (kPa)' } },
+                    y: { title: { display: true, text: 'Production Rate (bbl/d)' } }
+                }
+            }
+        });
+
+        const sorCtx = document.getElementById('sorComparisonChart').getContext('2d');
+        sorComparisonChart = new Chart(sorCtx, {
+            type: 'bar',
+            data: {
+                labels: facilityLabels,
+                datasets: [{
+                    label: 'Avg SOR',
+                    data: new Array(facilityLabels.length).fill(0),
+                    backgroundColor: ['rgba(255, 159, 64, 0.8)', 'rgba(255, 99, 132, 0.8)', 'rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)'],
+                    borderColor: ['rgb(255, 159, 64)', 'rgb(255, 99, 132)', 'rgb(75, 192, 192)', 'rgb(153, 102, 255)'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { 
+                    y: { 
+                        beginAtZero: false, 
+                        min: config.sorChartMin || 3.0, 
+                        max: config.sorChartMax || 3.5 
+                    } 
+                }
+            }
+        });
+
+        const subcoolHeatmapCtx = document.getElementById('subcoolHeatmapChart').getContext('2d');
+        subcoolHeatmapChart = new Chart(subcoolHeatmapCtx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Subcool Temp (°C)',
+                    data: [],
+                    backgroundColor: []
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { 
+                    y: { 
+                        beginAtZero: false, 
+                        min: config.subcoolChartMin || 170, 
+                        max: config.subcoolChartMax || 210 
+                    } 
+                }
+            }
+        });
+
+        const productionHeatmapCtx = document.getElementById('productionHeatmapChart').getContext('2d');
+        productionHeatmapChart = new Chart(productionHeatmapCtx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Production Rate (bbl/d)',
+                    data: [],
+                    backgroundColor: []
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: false } }
+            }
+        });
+
+        const anomalyCtx = document.getElementById('anomalyChart').getContext('2d');
+        anomalyChart = new Chart(anomalyCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Well Pairs',
+                    data: [],
+                    backgroundColor: 'rgba(220, 53, 69, 0.6)',
+                    borderColor: 'rgb(220, 53, 69)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: 'Well Pair Index' } },
+                    y: { 
+                        title: { display: true, text: 'Subcool Temperature (°C)' }, 
+                        min: config.subcoolChartMin || 160, 
+                        max: config.subcoolChartMax || 220,
+                        grid: {
+                            color: (context) => {
+                                const optimalMin = config.subcoolOptimalMin || 175;
+                                const optimalMax = config.subcoolOptimalMax || 205;
+                                if (context.tick.value >= optimalMin && context.tick.value <= optimalMax) {
+                                    return 'rgba(40, 167, 69, 0.3)';
+                                }
+                                return 'rgba(0, 0, 0, 0.1)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    async function initSignalR() {
+        connection = new signalR.HubConnectionBuilder()
+            .withUrl("/hubs/telemetry")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("ReceiveWellPairs", (wellPairMessages) => {
+            console.log(`✅ Received ${wellPairMessages.length} well pairs`);
+            wellPairs = wellPairMessages;
+            document.getElementById('wellPairCount').textContent = wellPairMessages.length;
+            updateWellPairTable();
+            updateCharts();
+        });
+
+        connection.on("ReceiveWellPairKpi", (kpiMessage) => {
+            console.log('✅ Received KPI data:', kpiMessage);
+            kpiData = kpiMessage;
+            updateKpiDisplay();
+            updateCharts();
+        });
+
+        try {
+            await connection.start();
+            console.log('✅ SignalR connected for well pairs');
+            console.log('Waiting for well pair data...');
+        } catch (err) {
+            console.error('❌ SignalR connection error:', err);
+            setTimeout(() => initSignalR(), 5000);
+        }
+        
+        connection.onclose(() => {
+            console.log('SignalR connection closed, reconnecting...');
+            setTimeout(() => initSignalR(), 5000);
+        });
+    }
+
+    function updateKpiDisplay() {
+        if (!kpiData) return;
+        
+        document.getElementById('totalBitumenProduction').textContent = kpiData.totalBitumenProduction.toFixed(0);
+        document.getElementById('totalSteamInjection').textContent = kpiData.totalSteamInjection.toFixed(0);
+        document.getElementById('avgSubcoolTemp').textContent = kpiData.avgSubcoolTemperature.toFixed(1);
+        document.getElementById('systemUptime').textContent = kpiData.systemUptime.toFixed(1);
+        document.getElementById('avgSor').textContent = kpiData.avgSor.toFixed(2);
+        document.getElementById('activeWellPairs').textContent = kpiData.activeWellPairs;
+    }
+
+    function updateWellPairTable() {
+        const tbody = document.getElementById('wellPairTableBody');
+        tbody.innerHTML = '';
+
+        wellPairs.forEach(wp => {
+            const row = tbody.insertRow();
+            const statusBadge = wp.status === 'Normal' ? 'badge-success' : 
+                               wp.status === 'Caution' ? 'badge-warning' : 'badge-danger';
+            
+            row.innerHTML = `
+                <td><strong>${wp.wellPairName}</strong></td>
+                <td>${wp.facility}</td>
+                <td>${wp.pad}</td>
+                <td>${wp.subcoolTemperature.toFixed(1)}</td>
+                <td>${wp.wellheadPressure.toFixed(0)}</td>
+                <td>${wp.productionRate.toFixed(1)}</td>
+                <td>${wp.steamInjection.toFixed(1)}</td>
+                <td>${wp.sorRatio.toFixed(2)}</td>
+                <td>${wp.systemUptime.toFixed(1)}</td>
+                <td><span class="badge ${statusBadge}">${wp.status}</span></td>
+                <td><small>${new Date(wp.timestamp).toLocaleTimeString()}</small></td>
+            `;
+        });
+    }
+
+    function updateCharts() {
+        if (wellPairs.length === 0) {
+            console.warn('⚠️ No well pairs data available yet');
+            return;
+        }
+
+        console.log(`📊 Updating charts with ${wellPairs.length} well pairs`);
+
+        const facilityGroups = {};
+        facilities.forEach(facility => {
+            facilityGroups[facility] = wellPairs.filter(wp => wp.facility === facility);
+        });
+
+        const facilityData = facilities.map(facility => {
+            const pairs = facilityGroups[facility];
+            if (pairs.length === 0) return { production: 0, temp: 0, sor: 0 };
+            
+            return {
+                production: pairs.reduce((sum, wp) => sum + wp.productionRate, 0) / pairs.length,
+                temp: pairs.reduce((sum, wp) => sum + wp.subcoolTemperature, 0) / pairs.length,
+                sor: pairs.reduce((sum, wp) => sum + wp.sorRatio, 0) / pairs.length
+            };
+        });
+
+        productionDistributionChart.data.datasets[0].data = facilityData.map(d => d.production);
+        productionDistributionChart.update('none');
+
+        temperatureControlChart.data.datasets[0].data = facilityData.map(d => d.temp);
+        temperatureControlChart.update('none');
+
+        const pressureProdData = wellPairs.map(wp => ({
+            x: wp.wellheadPressure,
+            y: wp.productionRate
+        }));
+        pressureProductionChart.data.datasets[0].data = pressureProdData;
+        pressureProductionChart.update('none');
+
+        const sorValues = facilityData.map(d => d.sor);
+        console.log(`📈 SOR values:`, sorValues.map((val, idx) => `${facilities[idx]}: ${val.toFixed(2)}`).join(', '));
+        sorComparisonChart.data.datasets[0].data = sorValues;
+        sorComparisonChart.update('none');
+
+        const padGroups = {};
+        wellPairs.forEach(wp => {
+            if (!padGroups[wp.pad]) padGroups[wp.pad] = { temps: [], productions: [] };
+            padGroups[wp.pad].temps.push(wp.subcoolTemperature);
+            padGroups[wp.pad].productions.push(wp.productionRate);
+        });
+
+        const padLabels = Object.keys(padGroups).sort();
+        const avgTemps = padLabels.map(pad => 
+            padGroups[pad].temps.reduce((a, b) => a + b, 0) / padGroups[pad].temps.length
+        );
+        const avgProds = padLabels.map(pad => 
+            padGroups[pad].productions.reduce((a, b) => a + b, 0) / padGroups[pad].productions.length
+        );
+
+        subcoolHeatmapChart.data.labels = padLabels;
+        subcoolHeatmapChart.data.datasets[0].data = avgTemps;
+        const optimalMin = config.subcoolOptimalMin || 175;
+        const optimalMax = config.subcoolOptimalMax || 205;
+        subcoolHeatmapChart.data.datasets[0].backgroundColor = avgTemps.map(temp => 
+            temp < optimalMin ? 'rgba(220, 53, 69, 0.8)' : 
+            temp > optimalMax ? 'rgba(255, 193, 7, 0.8)' : 
+            'rgba(40, 167, 69, 0.8)'
+        );
+        subcoolHeatmapChart.update('none');
+
+        productionHeatmapChart.data.labels = padLabels;
+        productionHeatmapChart.data.datasets[0].data = avgProds;
+        const maxProd = Math.max(...avgProds);
+        productionHeatmapChart.data.datasets[0].backgroundColor = avgProds.map(prod => 
+            `rgba(${Math.floor(54 + (prod / maxProd) * 200)}, 162, 235, 0.8)`
+        );
+        productionHeatmapChart.update('none');
+
+        const topCount = config.topPairsCount || 10;
+        const topPairs = [...wellPairs].sort((a, b) => b.productionRate - a.productionRate).slice(0, topCount);
+        const topPairsList = document.getElementById('topWellPairsList');
+        topPairsList.innerHTML = topPairs.map((wp, idx) => `
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <span><strong>#${idx + 1}</strong> ${wp.wellPairName}</span>
+                <span class="badge badge-primary">${wp.productionRate.toFixed(1)} bbl/d</span>
+            </div>
+        `).join('');
+
+        const anomalyData = wellPairs.map((wp, idx) => ({
+            x: idx,
+            y: wp.subcoolTemperature
+        }));
+        anomalyChart.data.datasets[0].data = anomalyData;
+        anomalyChart.update('none');
+    }
+
+    document.getElementById('wellPairSearch').addEventListener('keyup', function() {
+        const filter = this.value.toUpperCase();
+        const rows = document.querySelectorAll('#wellPairTableBody tr');
+        rows.forEach(row => {
+            const text = row.textContent.toUpperCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        });
+    });
+</script>
+
