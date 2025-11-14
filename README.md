@@ -84,6 +84,117 @@ Real-time Steam-to-Oil Ratio analytics dashboard for monitoring SAGD operations 
 
 Copy `appsettings.example.json` to `appsettings.json` and add your database connection string and AESO API key if you want live power grid data.
 
+## Well Pair Performance Dashboard - Calculations & Assumptions
+
+When building the real-time well pair performance dashboard, I made several assumptions and calculations to simulate realistic SAGD operations. Here's what I used:
+
+### Well Pair Distribution
+
+I set up 66 well pairs across 2 facilities:
+- **Facility A**: 31 well pairs across 8 pads
+- **Facility B**: 35 well pairs across 8 pads
+- Each facility has 16 pads total (8 per facility), with well pairs distributed evenly across pads
+
+### Production Rate Simulation
+
+For bitumen production rates, I used different base values per facility:
+- **Facility A**: Base production of 383.4 bbl/d per well pair
+- **Facility B**: Base production of 360.8 bbl/d per well pair
+
+Each well pair's production rate is calculated every second using:
+- A sine wave function (frequency 0.5, amplitude ±30 bbl/d) to simulate cyclical variations
+- A random walk trend that slowly drifts up or down (bounded between -30 to +30 bbl/d)
+- Random noise (±20 bbl/d) to add realistic sensor variance
+- Final values are clamped between 250-500 bbl/d to stay within operational limits
+
+### Subcool Temperature Modeling
+
+Subcool temperature is critical for SAGD operations, so I modeled it carefully:
+- Base temperature: 187.0°C (within the optimal 175-205°C range)
+- Sine wave variation (frequency 0.3, amplitude ±8°C) for natural temperature cycles
+- Random noise (±3°C) for sensor precision variance
+- Values bounded between 175-205°C to represent normal operating conditions
+
+The optimal operating zone is set at 175-205°C, which I used for color-coding in the heatmaps and anomaly detection charts.
+
+### Wellhead Pressure Simulation
+
+Wellhead pressure varies based on steam injection and reservoir response:
+- Base pressure: 9,000 kPa
+- Sine wave fluctuation (frequency 0.4, amplitude ±150 kPa) representing pressure waves
+- Random noise (±100 kPa) for measurement variance
+- Facility-specific control ranges: Facility A maintains tighter control (±150 kPa), Facility B allows slightly more variation (±200 kPa)
+- Values clamped between 8,000-10,500 kPa for safety limits
+
+### Steam Injection Rates
+
+Steam injection is simulated to match typical SAGD operations:
+- Base injection: 1,180 Sm³/d per well pair
+- Sine wave variation (frequency 0.6, amplitude ±80 Sm³/d) for injection cycles
+- Random noise (±50 Sm³/d) for operational adjustments
+- Bounded between 1,000-1,400 Sm³/d to represent typical operational ranges
+
+### SOR Ratio Calculation
+
+The Steam-to-Oil Ratio is calculated in real-time:
+```
+SOR = Steam Injection (Sm³/d) ÷ Production Rate (bbl/d)
+```
+
+When production rate is zero or very low, I default to facility-specific values:
+- Facility A default SOR: 3.20
+- Facility B default SOR: 3.19
+
+This ensures the dashboard always shows meaningful SOR values even during production interruptions.
+
+### System Uptime Tracking
+
+Uptime percentages are calculated per facility:
+- **Facility A**: Base uptime of 94.6%
+- **Facility B**: Base uptime of 94.2%
+- Random variation (±1%) to simulate minor equipment fluctuations
+- Bounded between 90-100% to represent realistic availability
+
+### Status Determination Logic
+
+I implemented a three-tier status system (Normal, Caution, Alert) based on these thresholds:
+
+**Alert Status** (Red) - Triggers when any of these conditions occur:
+- Subcool temperature outside 170-210°C range
+- Wellhead pressure exceeds 10,500 kPa
+- Production rate drops below 80% of current value (rapid decline)
+- System uptime falls below 90%
+
+**Caution Status** (Yellow) - Triggers when:
+- Subcool temperature outside optimal 175-205°C range (but within 170-210°C)
+- Wellhead pressure exceeds 10,200 kPa (approaching alert threshold)
+- System uptime drops below 92%
+
+**Normal Status** (Green) - All parameters within acceptable operating ranges
+
+### Real-Time KPI Calculations
+
+The dashboard aggregates data across all 66 well pairs to calculate:
+- **Total Bitumen Production**: Sum of all production rates
+- **Total Steam Injection**: Sum of all steam injection rates
+- **Average Subcool Temperature**: Mean across all well pairs
+- **Average SOR**: Mean SOR ratio across all well pairs
+- **System Uptime**: Weighted average based on facility uptime percentages
+- **Active Well Pairs**: Count of all well pairs (currently all 66)
+
+### Update Frequency
+
+All well pair data is updated every second and broadcast via SignalR to connected clients, giving you real-time visualization of all metrics. The charts and heatmaps update seamlessly as new data arrives, making it feel like you're monitoring actual field operations.
+
+### Assumptions I Made
+
+A few assumptions that made the simulation work smoothly:
+- All well pairs are operational (no offline wells in the initial setup)
+- Facility A performs slightly better than Facility B (higher production, tighter pressure control)
+- Pressure control tolerance differs between facilities (A is tighter, B has more flexibility)
+- Optimal subcool temperature zone is 175-205°C based on typical SAGD best practices
+- Production rates correlate inversely with steam injection (higher steam can push more oil, but efficiency matters)
+
 ## Notes
 
 This was a learning project. The Modbus simulator lets you test everything without needing actual industrial hardware. All the SAGD parameters (steam injection, bitumen production, reservoir temp, ESP status, etc.) are simulated to give realistic data for the analytics dashboard.
