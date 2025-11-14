@@ -1,9 +1,32 @@
+@* Realtime.cshtml - Real-Time Monitoring Dashboard Overview Page *@
+@using System.Text.Json
 @{
     ViewData["Title"] = "Real-Time Monitoring";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-<!-- Content Header -->
+@section Styles {
+    <style>
+        #processUnitTabs .nav-link {
+            cursor: pointer;
+            user-select: none;
+            pointer-events: auto !important;
+        }
+        
+        #processUnitTabs .nav-link:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        #processUnitTabs .nav-link.active {
+            background-color: #fff;
+            border-color: #dee2e6 #dee2e6 #fff;
+        }
+        
+        .overview-charts {
+            margin-top: 20px;
+        }
+    </style>
+}
 <div class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
@@ -20,11 +43,9 @@
     </div>
 </div>
 
-<!-- Main content -->
 <section class="content">
     <div class="container-fluid">
         
-        <!-- Status Cards -->
         <div class="row">
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-info">
@@ -75,42 +96,73 @@
             </div>
         </div>
 
-        <!-- Charts Row -->
-        <div class="row">
-            <div class="col-lg-6">
+        <div class="row mb-3">
+            <div class="col-12">
                 <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title"><i class="fas fa-chart-area"></i> Temperature Trend</h3>
-                        <div class="card-tools">
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                        </div>
-                    </div>
                     <div class="card-body">
-                        <canvas id="temperatureChart" style="height: 250px;"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title"><i class="fas fa-chart-line"></i> Pressure Trend</h3>
-                        <div class="card-tools">
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                <i class="fas fa-minus"></i>
-                            </button>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h4><i class="fas fa-tachometer-alt"></i> Overview Dashboard</h4>
+                                <p class="text-muted">Real-time temperature and pressure monitoring</p>
+                            </div>
+                            <div class="col-md-4 text-right">
+                                <a href="/Dashboard/ProcessTabs" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-industry"></i> View Process Tabs
+                                    <i class="fas fa-arrow-right ml-2"></i>
+                                </a>
+                                <p class="text-muted mt-2 mb-0"><small>SAGD Process • Separation • Utilities</small></p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="pressureChart" style="height: 250px;"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Tag Values Table -->
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header bg-danger">
+                        <div class="row">
+                            <div class="col-8">
+                                <h3 class="card-title text-white mb-0"><i class="fas fa-thermometer-half"></i> Temperature Trends</h3>
+                            </div>
+                            <div class="col-4 text-right">
+                                <div class="text-white small">
+                                    <div>Avg: <span id="tempAvg" class="font-weight-bold">--</span>°C</div>
+                                    <div>Min: <span id="tempMin" class="font-weight-bold">--</span>°C | Max: <span id="tempMax" class="font-weight-bold">--</span>°C</div>
+                                    <div>Rate: <span id="tempRate" class="font-weight-bold">--</span>°C/s</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="temperatureChart" style="height: 350px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header bg-info">
+                        <div class="row">
+                            <div class="col-8">
+                                <h3 class="card-title text-white mb-0"><i class="fas fa-tint"></i> Pressure Trends</h3>
+                            </div>
+                            <div class="col-4 text-right">
+                                <div class="text-white small">
+                                    <div>Avg: <span id="pressAvg" class="font-weight-bold">--</span> kPa</div>
+                                    <div>Min: <span id="pressMin" class="font-weight-bold">--</span> | Max: <span id="pressMax" class="font-weight-bold">--</span> kPa</div>
+                                    <div>Rate: <span id="pressRate" class="font-weight-bold">--</span> kPa/s</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="pressureChart" style="height: 350px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-12">
                 <div class="card">
@@ -133,6 +185,7 @@
                                 <tr>
                                     <th>Tag Name</th>
                                     <th>Current Value</th>
+                                    <th>Trend</th>
                                     <th>Unit</th>
                                     <th>Timestamp</th>
                                     <th>Status</th>
@@ -141,7 +194,7 @@
                             </thead>
                             <tbody id="tagTableBody">
                                 <tr>
-                                    <td colspan="6" class="text-center">
+                                    <td colspan="7" class="text-center">
                                         <i class="fas fa-spinner fa-spin"></i> Connecting to SignalR...
                                     </td>
                                 </tr>
@@ -152,7 +205,6 @@
             </div>
         </div>
 
-        <!-- Alarms -->
         <div class="row">
             <div class="col-12">
                 <div class="card card-danger">
@@ -181,65 +233,298 @@
         console.log('SignalR library loaded:', typeof signalR !== 'undefined');
     </script>
     <script>
+        const config = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Config ?? new Dashboard.Domain.Models.RealtimeDashboardConfig()));
+        
+        console.log('Config loaded:', config);
+        console.log('Temperature keywords:', config.temperatureKeywords);
+        console.log('Pressure keywords:', config.pressureKeywords);
+        
         let connection = null;
         let temperatureChart = null;
         let pressureChart = null;
-        const tempData = { labels: [], values: [] };
-        const pressData = { labels: [], values: [] };
-        const maxDataPoints = 20;
+        
+        const tempData = new Map();
+        const pressData = new Map();
+        const tempStats = {
+            allValues: [],
+            min: Infinity,
+            max: -Infinity,
+            sum: 0,
+            count: 0,
+            lastValue: null,
+            lastTime: null,
+            rate: 0
+        };
+        const pressStats = {
+            allValues: [],
+            min: Infinity,
+            max: -Infinity,
+            sum: 0,
+            count: 0,
+            lastValue: null,
+            lastTime: null,
+            rate: 0
+        };
+        
+        const tagValues = new Map();
+        const tagTrends = new Map();
+        
+        const maxDataPoints = config.maxDataPoints || 60;
+        const movingAverageWindow = 5;
+        let updateCounter = 0;
+        let lastUpdateTime = Date.now();
+        const tempColors = [
+            { border: '#dc3545', fill: 'rgba(220, 53, 69, 0.1)' },
+            { border: '#fd7e14', fill: 'rgba(253, 126, 20, 0.1)' },
+            { border: '#ffc107', fill: 'rgba(255, 193, 7, 0.1)' },
+            { border: '#e83e8c', fill: 'rgba(232, 62, 140, 0.1)' },
+            { border: '#6f42c1', fill: 'rgba(111, 66, 193, 0.1)' }
+        ];
+        const pressColors = [
+            { border: '#17a2b8', fill: 'rgba(23, 162, 184, 0.1)' },
+            { border: '#007bff', fill: 'rgba(0, 123, 255, 0.1)' },
+            { border: '#6610f2', fill: 'rgba(102, 16, 242, 0.1)' },
+            { border: '#20c997', fill: 'rgba(32, 201, 151, 0.1)' },
+            { border: '#0dcaf0', fill: 'rgba(13, 202, 240, 0.1)' }
+        ];
 
-        // Initialize Charts
-        function initCharts() {
-            const tempCtx = document.getElementById('temperatureChart').getContext('2d');
-            temperatureChart = new Chart(tempCtx, {
-                type: 'line',
-                data: {
-                    labels: tempData.labels,
-                    datasets: [{
-                        label: 'Temperature (°C)',
-                        data: tempData.values,
-                        borderColor: '#dc3545',
-                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: false }
-                    }
+        function calculateMovingAverage(values, window = movingAverageWindow) {
+            if (values.length < window) return values;
+            const smoothed = [];
+            for (let i = 0; i < values.length; i++) {
+                const start = Math.max(0, i - Math.floor(window / 2));
+                const end = Math.min(values.length, i + Math.ceil(window / 2));
+                const slice = values.slice(start, end);
+                const avg = slice.reduce((a, b) => a + (b || 0), 0) / slice.length;
+                smoothed.push(avg);
+            }
+            return smoothed;
+        }
+        
+        function updateStatistics(stats, newValue, timestamp) {
+            if (newValue === null || newValue === undefined || !isFinite(newValue)) return;
+            
+            stats.allValues.push(newValue);
+            if (stats.allValues.length > maxDataPoints) {
+                const removed = stats.allValues.shift();
+                stats.sum -= removed;
+                stats.count--;
+            }
+            
+            stats.min = Math.min(stats.min, newValue);
+            stats.max = Math.max(stats.max, newValue);
+            stats.sum += newValue;
+            stats.count++;
+            
+            if (stats.lastValue !== null && stats.lastTime !== null) {
+                const timeDiff = (timestamp - stats.lastTime) / 1000;
+                if (timeDiff > 0) {
+                    stats.rate = (newValue - stats.lastValue) / timeDiff;
                 }
-            });
-
-            const pressCtx = document.getElementById('pressureChart').getContext('2d');
-            pressureChart = new Chart(pressCtx, {
-                type: 'line',
-                data: {
-                    labels: pressData.labels,
-                    datasets: [{
-                        label: 'Pressure (PSI)',
-                        data: pressData.values,
-                        borderColor: '#17a2b8',
-                        backgroundColor: 'rgba(23, 162, 184, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: false }
-                    }
-                }
+            }
+            
+            stats.lastValue = newValue;
+            stats.lastTime = timestamp;
+        }
+        
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
             });
         }
+        
+        function synchronizeTimeLabels(dataMap) {
+            const allTimes = new Set();
+            dataMap.forEach(tagData => {
+                tagData.timestamps.forEach(ts => allTimes.add(ts));
+            });
+            return Array.from(allTimes).sort((a, b) => a - b);
+        }
+        
+        function initCharts() {
+            console.log('Initializing enhanced charts...');
+            const tempCtx = document.getElementById('temperatureChart');
+            if (!tempCtx) {
+                console.error('Temperature chart canvas not found');
+                return;
+            }
+            temperatureChart = new Chart(tempCtx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 0
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                lineWidth: 1
+                            },
+                            ticks: {
+                                font: { size: 11 },
+                                callback: function(value) {
+                                    return value.toFixed(1) + '°C';
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time (HH:MM:SS)',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                display: false
+                            },
+                            ticks: {
+                                font: { size: 10 },
+                                maxTicksLimit: 12,
+                                maxRotation: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { size: 11, weight: 'bold' },
+                                usePointStyle: true,
+                                boxWidth: 12
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                            titleFont: { size: 12, weight: 'bold' },
+                            bodyFont: { size: 11 },
+                            padding: 10,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const dataset = context.dataset;
+                                    const index = context.dataIndex;
+                                    const rawValue = dataset.rawValues ? dataset.rawValues[index] : value;
+                                    return `${dataset.label}: ${value.toFixed(2)}°C (raw: ${rawValue.toFixed(2)})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            console.log('Temperature chart initialized');
 
-        // Initialize SignalR
+            const pressCtx = document.getElementById('pressureChart');
+            if (!pressCtx) {
+                console.error('Pressure chart canvas not found');
+                return;
+            }
+            pressureChart = new Chart(pressCtx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 0
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Pressure (kPa)',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                lineWidth: 1
+                            },
+                            ticks: {
+                                font: { size: 11 },
+                                callback: function(value) {
+                                    return value.toFixed(0) + ' kPa';
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time (HH:MM:SS)',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                display: false
+                            },
+                            ticks: {
+                                font: { size: 10 },
+                                maxTicksLimit: 12,
+                                maxRotation: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { size: 11, weight: 'bold' },
+                                usePointStyle: true,
+                                boxWidth: 12
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                            titleFont: { size: 12, weight: 'bold' },
+                            bodyFont: { size: 11 },
+                            padding: 10,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const dataset = context.dataset;
+                                    const index = context.dataIndex;
+                                    const rawValue = dataset.rawValues ? dataset.rawValues[index] : value;
+                                    return `${dataset.label}: ${value.toFixed(1)} kPa (raw: ${rawValue.toFixed(1)})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            console.log('Pressure chart initialized');
+            console.log('✅ Enhanced charts initialized with multi-series support');
+        }
+
         async function initSignalR() {
             connection = new signalR.HubConnectionBuilder()
                 .withUrl("/hubs/telemetry")
@@ -247,7 +532,7 @@
                 .build();
 
             connection.on("ReceiveTelemetry", (message) => {
-                updateTagValue(message.tagName, message.value, message.timestamp);
+                updateTagValue(message.tagName, message.value, message.unit, message.timestamp);
                 updateChart(message.tagName, message.value, message.timestamp);
             });
 
@@ -268,16 +553,15 @@
                 document.getElementById('connectionStatus').parentElement.parentElement.className = 'small-box bg-danger';
                 showToast('Failed to connect: ' + err.message, 'error');
                 
-                // Retry after 5 seconds
                 setTimeout(() => {
                     console.log('Retrying SignalR connection...');
                     initSignalR();
-                }, 5000);
+                }, config.retryDelayMs);
             }
         }
 
-        function updateTagValue(tagName, value, timestamp) {
-            console.log('Received telemetry:', tagName, value, timestamp);
+        function updateTagValue(tagName, value, unit, timestamp) {
+            console.log('Received telemetry:', tagName, value, unit, timestamp);
             
             let row = document.querySelector(`tr[data-tag="${tagName}"]`);
             if (!row) {
@@ -287,50 +571,243 @@
                 }
                 row = tbody.insertRow();
                 row.setAttribute('data-tag', tagName);
-                row.innerHTML = `
+                    row.innerHTML = `
                     <td class="font-weight-bold">${tagName}</td>
-                    <td class="tag-value">--</td>
-                    <td class="text-muted">°C / PSI</td>
-                    <td class="tag-timestamp">--</td>
-                    <td><span class="badge badge-success">Good</span></td>
+                    <td class="tag-value text-right font-weight-bold">--</td>
+                    <td class="tag-trend text-center"><span class="badge badge-secondary">--</span></td>
+                    <td class="tag-unit text-muted">--</td>
+                    <td class="tag-timestamp"><small>--</small></td>
+                    <td><span class="badge badge-success"><i class="fas fa-circle"></i> ${config.defaultStatus}</span></td>
                     <td>
-                        <button class="btn btn-sm btn-info" onclick="viewHistory('${tagName}')">
+                        <button class="btn btn-sm btn-info" onclick="viewHistory('${tagName}')" title="View History">
                             <i class="fas fa-history"></i>
                         </button>
                     </td>
                 `;
+                tagValues.set(tagName, []);
+                tagTrends.set(tagName, 'stable');
             }
             
-            row.querySelector('.tag-value').textContent = value.toFixed(2);
-            row.querySelector('.tag-timestamp').textContent = new Date(timestamp).toLocaleTimeString();
+            const prevValues = tagValues.get(tagName) || [];
+            prevValues.push(value);
+            if (prevValues.length > 3) prevValues.shift();
+            tagValues.set(tagName, prevValues);
+            
+            const trend = getTrend(prevValues);
+            tagTrends.set(tagName, trend);
+            const trendBadge = row.querySelector('.tag-trend span');
+            if (trend === 'up') {
+                trendBadge.className = 'badge badge-danger';
+                trendBadge.innerHTML = '<i class="fas fa-arrow-up"></i>';
+            } else if (trend === 'down') {
+                trendBadge.className = 'badge badge-success';
+                trendBadge.innerHTML = '<i class="fas fa-arrow-down"></i>';
+            } else {
+                trendBadge.className = 'badge badge-secondary';
+                trendBadge.innerHTML = '<i class="fas fa-minus"></i>';
+            }
+            
+            row.querySelector('.tag-value').textContent = value.toFixed(config.valueDecimalPlaces);
+            row.querySelector('.tag-timestamp').innerHTML = `<small>${new Date(timestamp).toLocaleTimeString()}</small>`;
+            
+            const unitCell = row.querySelector('.tag-unit');
+            if (unitCell && unit) {
+                unitCell.textContent = unit;
+            } else if (unitCell) {
+                if (tagName.includes('Temp') || tagName.includes('degC') || tagName.includes('Temperature')) unitCell.textContent = '°C';
+                else if (tagName.includes('Press') || tagName.includes('kPa') || tagName.includes('Pressure')) unitCell.textContent = 'kPa';
+                else if (tagName.includes('m3') || tagName.includes('Flow')) {
+                    unitCell.textContent = (tagName.includes('m3/d') || tagName.includes('Injection') || tagName.includes('Production')) ? 'm³/d' : 'm³/h';
+                }
+                else if (tagName.includes('bbl') || tagName.includes('Production')) unitCell.textContent = 'bbl/d';
+                else if (tagName.includes('%') || tagName.includes('Efficiency') || tagName.includes('Status')) unitCell.textContent = '%';
+                else if (tagName.includes('ratio') || tagName.includes('SOR')) unitCell.textContent = 'ratio';
+                else if (tagName.includes('bar')) unitCell.textContent = 'bar';
+                else unitCell.textContent = '--';
+            }
+            
+            const valueCell = row.querySelector('.tag-value');
+            if (tagName.includes('Temp') || tagName.includes('Temperature')) {
+                if (value > 150) valueCell.className = 'tag-value text-right font-weight-bold text-danger';
+                else if (value > 100) valueCell.className = 'tag-value text-right font-weight-bold text-warning';
+                else valueCell.className = 'tag-value text-right font-weight-bold text-success';
+            } else if (tagName.includes('Press') || tagName.includes('Pressure')) {
+                if (value > 4500) valueCell.className = 'tag-value text-right font-weight-bold text-danger';
+                else if (value > 4000) valueCell.className = 'tag-value text-right font-weight-bold text-warning';
+                else valueCell.className = 'tag-value text-right font-weight-bold text-success';
+            } else if (tagName.includes('Efficiency') || tagName.includes('Status')) {
+                if (value < 90) valueCell.className = 'tag-value text-right font-weight-bold text-danger';
+                else if (value < 95) valueCell.className = 'tag-value text-right font-weight-bold text-warning';
+                else valueCell.className = 'tag-value text-right font-weight-bold text-success';
+            } else {
+                valueCell.className = 'tag-value text-right font-weight-bold';
+            }
+            
             row.classList.add('table-info');
-            setTimeout(() => row.classList.remove('table-info'), 300);
+            setTimeout(() => row.classList.remove('table-info'), config.animationDelayMs);
+            
+            updateCounter++;
+            const now = Date.now();
+            if (now - lastUpdateTime >= 1000) {
+                const rate = updateCounter / ((now - lastUpdateTime) / 1000);
+                document.getElementById('updateRate').textContent = rate.toFixed(1);
+                updateCounter = 0;
+                lastUpdateTime = now;
+            }
 
             const count = document.querySelectorAll('#tagTableBody tr').length;
             document.getElementById('tagCount').textContent = count;
         }
 
         function updateChart(tagName, value, timestamp) {
-            const time = new Date(timestamp).toLocaleTimeString();
+            const tempKeywords = config.temperatureKeywords || ['Temp', 'Temperature'];
+            const pressKeywords = config.pressureKeywords || ['Press', 'Pressure'];
+            const ts = new Date(timestamp).getTime();
             
-            if (tagName.includes('Temp') || tagName.includes('Temperature')) {
-                tempData.labels.push(time);
-                tempData.values.push(value);
-                if (tempData.labels.length > maxDataPoints) {
-                    tempData.labels.shift();
-                    tempData.values.shift();
+            let isTemperature = tempKeywords.some(keyword => tagName.includes(keyword));
+            if (isTemperature && temperatureChart) {
+                if (!tempData.has(tagName)) {
+                    tempData.set(tagName, {
+                        labels: [],
+                        values: [],
+                        timestamps: [],
+                        rawValues: []
+                    });
                 }
-                if (temperatureChart) temperatureChart.update();
+                
+                const tagData = tempData.get(tagName);
+                tagData.timestamps.push(ts);
+                tagData.rawValues.push(value);
+                tagData.values.push(value);
+                tagData.labels.push(formatTime(timestamp));
+                
+                // Trim to max points
+                if (tagData.timestamps.length > maxDataPoints) {
+                    tagData.timestamps.shift();
+                    tagData.rawValues.shift();
+                    tagData.values.shift();
+                    tagData.labels.shift();
+                }
+                
+                const smoothed = calculateMovingAverage(tagData.values);
+                let dataset = temperatureChart.data.datasets.find(d => d.label === tagName);
+                if (!dataset) {
+                    const colorIndex = temperatureChart.data.datasets.length % tempColors.length;
+                    dataset = {
+                        label: tagName,
+                        data: [],
+                        borderColor: tempColors[colorIndex].border,
+                        backgroundColor: tempColors[colorIndex].fill,
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: false,
+                        pointRadius: 1,
+                        pointHoverRadius: 4,
+                        pointBorderWidth: 1,
+                        rawValues: []
+                    };
+                    temperatureChart.data.datasets.push(dataset);
+                }
+                
+                const allTimes = synchronizeTimeLabels(tempData);
+                temperatureChart.data.labels = allTimes.map(ts => formatTime(ts));
+                const syncedData = allTimes.map(time => {
+                    const index = tagData.timestamps.indexOf(time);
+                    return index >= 0 ? smoothed[index] : null;
+                });
+                dataset.data = syncedData;
+                dataset.rawValues = allTimes.map(time => {
+                    const index = tagData.timestamps.indexOf(time);
+                    return index >= 0 ? tagData.rawValues[index] : null;
+                });
+                
+                updateStatistics(tempStats, value, ts);
+                updateStatsDisplay('temp', tempStats);
+                temperatureChart.update('none');
             }
             
-            if (tagName.includes('Press') || tagName.includes('Pressure')) {
-                pressData.labels.push(time);
-                pressData.values.push(value);
-                if (pressData.labels.length > maxDataPoints) {
-                    pressData.labels.shift();
-                    pressData.values.shift();
+            let isPressure = pressKeywords.some(keyword => tagName.includes(keyword));
+            if (isPressure && pressureChart) {
+                if (!pressData.has(tagName)) {
+                    pressData.set(tagName, {
+                        labels: [],
+                        values: [],
+                        timestamps: [],
+                        rawValues: []
+                    });
                 }
-                if (pressureChart) pressureChart.update();
+                
+                const tagData = pressData.get(tagName);
+                tagData.timestamps.push(ts);
+                tagData.rawValues.push(value);
+                tagData.values.push(value);
+                tagData.labels.push(formatTime(timestamp));
+                
+                if (tagData.timestamps.length > maxDataPoints) {
+                    tagData.timestamps.shift();
+                    tagData.rawValues.shift();
+                    tagData.values.shift();
+                    tagData.labels.shift();
+                }
+                
+                const smoothed = calculateMovingAverage(tagData.values);
+                let dataset = pressureChart.data.datasets.find(d => d.label === tagName);
+                if (!dataset) {
+                    const colorIndex = pressureChart.data.datasets.length % pressColors.length;
+                    dataset = {
+                        label: tagName,
+                        data: [],
+                        borderColor: pressColors[colorIndex].border,
+                        backgroundColor: pressColors[colorIndex].fill,
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: false,
+                        pointRadius: 1,
+                        pointHoverRadius: 4,
+                        pointBorderWidth: 1,
+                        rawValues: []
+                    };
+                    pressureChart.data.datasets.push(dataset);
+                }
+                
+                const allTimes = synchronizeTimeLabels(pressData);
+                pressureChart.data.labels = allTimes.map(ts => formatTime(ts));
+                const syncedData = allTimes.map(time => {
+                    const index = tagData.timestamps.indexOf(time);
+                    return index >= 0 ? smoothed[index] : null;
+                });
+                dataset.data = syncedData;
+                dataset.rawValues = allTimes.map(time => {
+                    const index = tagData.timestamps.indexOf(time);
+                    return index >= 0 ? tagData.rawValues[index] : null;
+                });
+                
+                updateStatistics(pressStats, value, ts);
+                updateStatsDisplay('press', pressStats);
+                pressureChart.update('none');
+            }
+        }
+        
+        function updateStatsDisplay(type, stats) {
+            if (stats.count === 0) return;
+            
+            const avg = stats.sum / stats.count;
+            const min = stats.min === Infinity ? 0 : stats.min;
+            const max = stats.max === -Infinity ? 0 : stats.max;
+            const rate = stats.rate || 0;
+            
+            if (type === 'temp') {
+                document.getElementById('tempAvg').textContent = avg.toFixed(1);
+                document.getElementById('tempMin').textContent = min.toFixed(1);
+                document.getElementById('tempMax').textContent = max.toFixed(1);
+                document.getElementById('tempRate').textContent = rate >= 0 ? 
+                    '+' + rate.toFixed(3) : rate.toFixed(3);
+            } else if (type === 'press') {
+                document.getElementById('pressAvg').textContent = avg.toFixed(0);
+                document.getElementById('pressMin').textContent = min.toFixed(0);
+                document.getElementById('pressMax').textContent = max.toFixed(0);
+                document.getElementById('pressRate').textContent = rate >= 0 ? 
+                    '+' + rate.toFixed(2) : rate.toFixed(2);
             }
         }
 
@@ -355,11 +832,21 @@
             showToast(`${message.tagName} alarm: ${message.state}`, 'error');
         }
 
+        function getTrend(values) {
+            if (values.length < 2) return 'stable';
+            const recent = values.slice(-3);
+            if (recent.length < 2) return 'stable';
+            const change = recent[recent.length - 1] - recent[0];
+            const threshold = Math.abs(recent[0]) * 0.01; // 1% threshold
+            if (change > threshold) return 'up';
+            if (change < -threshold) return 'down';
+            return 'stable';
+        }
+
         function viewHistory(tagName) {
             showToast('History for ' + tagName, 'info');
         }
 
-        // Search functionality
         document.getElementById('tagSearch').addEventListener('keyup', function() {
             const filter = this.value.toUpperCase();
             const rows = document.querySelectorAll('#tagTableBody tr');
@@ -369,10 +856,35 @@
             });
         });
 
-        // Initialize on page load
+        function resizeCharts() {
+            setTimeout(() => {
+                [temperatureChart, pressureChart].forEach(chart => {
+                    if (chart) {
+                        try {
+                            chart.resize();
+                            chart.update('none');
+                        } catch (e) {
+                            console.warn('Chart resize error:', e);
+                        }
+                    }
+                });
+            }, 500);
+        }
+        
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, initializing Overview dashboard...');
+            console.log('Config:', config);
+            console.log('Chart.js available:', typeof Chart !== 'undefined');
+            
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js library not loaded!');
+                alert('Chart.js library failed to load. Please refresh the page.');
+                return;
+            }
+            
             initCharts();
             initSignalR();
+            resizeCharts();
         });
     </script>
 }

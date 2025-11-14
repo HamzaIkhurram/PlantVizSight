@@ -1,0 +1,893 @@
+@* ProcessTabs.cshtml - Process Monitoring Dashboard (SAGD, Separation, Utilities) *@
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Process Monitoring - SAGD, Separation & Utilities";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        #processTabs .nav-link {
+            cursor: pointer;
+            user-select: none;
+            pointer-events: auto !important;
+        }
+        
+        #processTabs .nav-link:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        #processTabs .nav-link.active {
+            background-color: #fff;
+            border-color: #dee2e6 #dee2e6 #fff;
+        }
+        
+        .tab-pane:not(.show.active) {
+            display: none !important;
+        }
+        
+        .tab-pane.show.active {
+            display: block !important;
+        }
+        
+        #sagd.show.active,
+        #separation.show.active,
+        #utilities.show.active {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+    </style>
+}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-industry"></i> Process Monitoring</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/">Home</a></li>
+                    <li class="breadcrumb-item"><a href="/Dashboard/Realtime">Real-Time</a></li>
+                    <li class="breadcrumb-item active">Process Tabs</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Overview:</strong> View Temperature & Pressure trends 
+                    <a href="/Dashboard/Realtime" class="alert-link">Go to Overview →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header p-0">
+                        <ul class="nav nav-tabs" id="processTabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="sagd-tab" href="/Dashboard/ProcessTabs#sagd" role="tab" aria-controls="sagd" aria-selected="true">
+                                    <i class="fas fa-fire"></i> SAGD Process
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="separation-tab" href="/Dashboard/ProcessTabs#separation" role="tab" aria-controls="separation" aria-selected="false">
+                                    <i class="fas fa-flask"></i> Separation
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="utilities-tab" href="/Dashboard/ProcessTabs#utilities" role="tab" aria-controls="utilities" aria-selected="false">
+                                    <i class="fas fa-cog"></i> Utilities
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="processTabContent">
+                            <div class="tab-pane fade show active" id="sagd" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <div class="card">
+                                            <div class="card-header bg-warning">
+                                                <h3 class="card-title text-white"><i class="fas fa-chart-line"></i> Steam Injection & Production</h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="productionChart" style="height: 300px;"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="card">
+                                            <div class="card-header bg-success">
+                                                <h3 class="card-title text-white"><i class="fas fa-chart-area"></i> Efficiency Metrics</h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="efficiencyChart" style="height: 300px;"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="separation" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <div class="card">
+                                            <div class="card-header bg-primary">
+                                                <h3 class="card-title text-white"><i class="fas fa-chart-bar"></i> Separator Performance</h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="separatorChart" style="height: 300px;"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="card">
+                                            <div class="card-header bg-secondary">
+                                                <h3 class="card-title text-white"><i class="fas fa-chart-pie"></i> Gas & Liquid Flow</h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="flowChart" style="height: 300px;"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="utilities" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <div class="card">
+                                            <div class="card-header bg-dark">
+                                                <h3 class="card-title text-white"><i class="fas fa-chart-line"></i> Utility Status</h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="utilityChart" style="height: 300px;"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="card">
+                                            <div class="card-header bg-light">
+                                                <h3 class="card-title"><i class="fas fa-chart-area"></i> System Performance</h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="systemChart" style="height: 300px;"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        const config = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Config ?? new Dashboard.Domain.Models.RealtimeDashboardConfig()));
+        
+        console.log('ProcessTabs page loaded');
+        console.log('Config:', config);
+        
+        let connection = null;
+        let productionChart = null;
+        let efficiencyChart = null;
+        let separatorChart = null;
+        let flowChart = null;
+        let utilityChart = null;
+        let systemChart = null;
+        
+        const productionData = { labels: [], steamValues: [], bitumenValues: [] };
+        const efficiencyData = { labels: [], sorValues: [], genEffValues: [] };
+        const separatorData = { labels: [], pressValues: [], tempValues: [] };
+        const flowData = { labels: [], gasValues: [], liquidValues: [] };
+        const utilityData = { labels: [], pumpValues: [], treatValues: [] };
+        const systemData = { labels: [], dehydValues: [], waterValues: [] };
+        
+        const maxDataPoints = config.maxDataPoints || 30;
+        
+        function initCharts() {
+            console.log('Initializing process charts...');
+            
+            const prodCtx = document.getElementById('productionChart');
+            if (prodCtx) {
+                console.log('Initializing production chart...');
+                productionChart = new Chart(prodCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'Steam Injection (m³/d)',
+                                data: [],
+                                borderColor: '#ffc107',
+                                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Bitumen Production (bbl/d)',
+                                data: [],
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 0 },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                position: 'left',
+                                title: { display: true, text: 'Steam (m³/d)' },
+                                grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                            },
+                            y1: {
+                                type: 'linear',
+                                position: 'right',
+                                title: { display: true, text: 'Bitumen (bbl/d)' },
+                                grid: { display: false }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { maxTicksLimit: 10 }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            const effCtx = document.getElementById('efficiencyChart');
+            if (effCtx) {
+                console.log('Initializing efficiency chart...');
+                efficiencyChart = new Chart(effCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'SOR Ratio',
+                                data: [],
+                                borderColor: '#dc3545',
+                                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'Generator Efficiency (%)',
+                                data: [],
+                                borderColor: '#17a2b8',
+                                backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 0 },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: { display: true, text: 'Value' },
+                                grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { maxTicksLimit: 10 }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            const sepCtx = document.getElementById('separatorChart');
+            if (sepCtx) {
+                console.log('Initializing separator chart...');
+                separatorChart = new Chart(sepCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'Separator Pressure (kPa)',
+                                data: [],
+                                borderColor: '#007bff',
+                                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Separator Temp (°C)',
+                                data: [],
+                                borderColor: '#6c757d',
+                                backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 0 },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                position: 'left',
+                                title: { display: true, text: 'Pressure (kPa)' },
+                                grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                            },
+                            y1: {
+                                type: 'linear',
+                                position: 'right',
+                                title: { display: true, text: 'Temp (°C)' },
+                                grid: { display: false }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { maxTicksLimit: 10 }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            const flowCtx = document.getElementById('flowChart');
+            if (flowCtx) {
+                console.log('Initializing flow chart...');
+                flowChart = new Chart(flowCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'Gas Flow (m³/d)',
+                                data: [],
+                                borderColor: '#6c757d',
+                                backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'Total Liquid (bbl/d)',
+                                data: [],
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 0 },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: { display: true, text: 'Flow Rate' },
+                                grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { maxTicksLimit: 10 }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            const utilCtx = document.getElementById('utilityChart');
+            if (utilCtx) {
+                utilityChart = new Chart(utilCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'Export Pump Status (%)',
+                                data: [],
+                                borderColor: '#343a40',
+                                backgroundColor: 'rgba(52, 58, 64, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'Water Treatment Eff (%)',
+                                data: [],
+                                borderColor: '#17a2b8',
+                                backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 0 },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: { display: true, text: 'Status (%)' },
+                                grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { maxTicksLimit: 10 }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            const sysCtx = document.getElementById('systemChart');
+            if (sysCtx) {
+                systemChart = new Chart(sysCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'Dehydration Eff (%)',
+                                data: [],
+                                borderColor: '#ffc107',
+                                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'ESP Status (%)',
+                                data: [],
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 0 },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: { display: true, text: 'Efficiency (%)' },
+                                grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { maxTicksLimit: 10 }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            console.log('✅ Process charts initialized:', {
+                productionChart: !!productionChart,
+                efficiencyChart: !!efficiencyChart,
+                separatorChart: !!separatorChart,
+                flowChart: !!flowChart,
+                utilityChart: !!utilityChart,
+                systemChart: !!systemChart
+            });
+        }
+
+        async function initSignalR() {
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("/hubs/telemetry")
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on("ReceiveTelemetry", (message) => {
+                if (message.tagName.includes('SAGD') || message.tagName.includes('Process')) {
+                    console.log('📡 Backend data received:', {
+                        tag: message.tagName,
+                        value: message.value,
+                        unit: message.unit,
+                        timestamp: message.timestamp
+                    });
+                }
+                updateChart(message.tagName, message.value, message.timestamp);
+            });
+
+            try {
+                console.log('Connecting to SignalR hub...');
+                await connection.start();
+                console.log('SignalR connected successfully!');
+            } catch (err) {
+                console.error('SignalR connection error:', err);
+                setTimeout(() => {
+                    console.log('Retrying SignalR connection...');
+                    initSignalR();
+                }, 5000);
+            }
+        }
+
+        function updateChart(tagName, value, timestamp) {
+            const time = new Date(timestamp).toLocaleTimeString();
+            
+            if ((tagName.includes('SteamInjection') || tagName.includes('BitumenProduction')) && productionChart) {
+                console.log('📊 Production chart update:', tagName, value);
+                if (tagName.includes('SteamInjection')) {
+                    if (!productionData.labels.includes(time)) {
+                        productionData.labels.push(time);
+                        productionData.steamValues.push(value);
+                        productionData.bitumenValues.push(null);
+                    } else {
+                        const index = productionData.labels.indexOf(time);
+                        productionData.steamValues[index] = value;
+                    }
+                }
+                
+                if (tagName.includes('BitumenProduction')) {
+                    if (!productionData.labels.includes(time)) {
+                        productionData.labels.push(time);
+                        productionData.bitumenValues.push(value);
+                        productionData.steamValues.push(null);
+                    } else {
+                        const index = productionData.labels.indexOf(time);
+                        productionData.bitumenValues[index] = value;
+                    }
+                }
+                
+                if (productionData.labels.length > maxDataPoints) {
+                    productionData.labels.shift();
+                    productionData.steamValues.shift();
+                    productionData.bitumenValues.shift();
+                }
+                
+                productionChart.data.labels = productionData.labels.slice();
+                productionChart.data.datasets[0].data = productionData.steamValues.slice();
+                productionChart.data.datasets[1].data = productionData.bitumenValues.slice();
+                productionChart.update('none');
+            }
+            
+            if ((tagName.includes('SORRatio') || tagName.includes('SteamGenEfficiency')) && efficiencyChart) {
+                console.log('⚡ Efficiency chart update:', tagName, value);
+                if (tagName.includes('SORRatio')) {
+                    if (!efficiencyData.labels.includes(time)) {
+                        efficiencyData.labels.push(time);
+                        efficiencyData.sorValues.push(value);
+                        efficiencyData.genEffValues.push(null);
+                    } else {
+                        const index = efficiencyData.labels.indexOf(time);
+                        efficiencyData.sorValues[index] = value;
+                    }
+                }
+                
+                if (tagName.includes('SteamGenEfficiency')) {
+                    if (!efficiencyData.labels.includes(time)) {
+                        efficiencyData.labels.push(time);
+                        efficiencyData.genEffValues.push(value);
+                        efficiencyData.sorValues.push(null);
+                    } else {
+                        const index = efficiencyData.labels.indexOf(time);
+                        efficiencyData.genEffValues[index] = value;
+                    }
+                }
+                
+                if (efficiencyData.labels.length > maxDataPoints) {
+                    efficiencyData.labels.shift();
+                    efficiencyData.sorValues.shift();
+                    efficiencyData.genEffValues.shift();
+                }
+                
+                efficiencyChart.data.labels = efficiencyData.labels.slice();
+                efficiencyChart.data.datasets[0].data = efficiencyData.sorValues.slice();
+                efficiencyChart.data.datasets[1].data = efficiencyData.genEffValues.slice();
+                efficiencyChart.update('none');
+            }
+            
+            if ((tagName.includes('SeparatorPressure') || tagName.includes('SeparatorTemp')) && separatorChart) {
+                console.log('🔧 Separator chart update:', tagName, value);
+                if (tagName.includes('SeparatorPressure')) {
+                    if (!separatorData.labels.includes(time)) {
+                        separatorData.labels.push(time);
+                        separatorData.pressValues.push(value);
+                        separatorData.tempValues.push(null);
+                    } else {
+                        const index = separatorData.labels.indexOf(time);
+                        separatorData.pressValues[index] = value;
+                    }
+                }
+                
+                if (tagName.includes('SeparatorTemp')) {
+                    if (!separatorData.labels.includes(time)) {
+                        separatorData.labels.push(time);
+                        separatorData.tempValues.push(value);
+                        separatorData.pressValues.push(null);
+                    } else {
+                        const index = separatorData.labels.indexOf(time);
+                        separatorData.tempValues[index] = value;
+                    }
+                }
+                
+                if (separatorData.labels.length > maxDataPoints) {
+                    separatorData.labels.shift();
+                    separatorData.pressValues.shift();
+                    separatorData.tempValues.shift();
+                }
+                
+                separatorChart.data.labels = separatorData.labels.slice();
+                separatorChart.data.datasets[0].data = separatorData.pressValues.slice();
+                separatorChart.data.datasets[1].data = separatorData.tempValues.slice();
+                separatorChart.update('none');
+            }
+            
+            if ((tagName.includes('ProducedGasFlow') || tagName.includes('TotalLiquid')) && flowChart) {
+                console.log('💧 Flow chart update:', tagName, value);
+                if (tagName.includes('ProducedGasFlow')) {
+                    if (!flowData.labels.includes(time)) {
+                        flowData.labels.push(time);
+                        flowData.gasValues.push(value);
+                        flowData.liquidValues.push(null);
+                    } else {
+                        const index = flowData.labels.indexOf(time);
+                        flowData.gasValues[index] = value;
+                    }
+                }
+                
+                if (tagName.includes('TotalLiquid')) {
+                    if (!flowData.labels.includes(time)) {
+                        flowData.labels.push(time);
+                        flowData.liquidValues.push(value);
+                        flowData.gasValues.push(null);
+                    } else {
+                        const index = flowData.labels.indexOf(time);
+                        flowData.liquidValues[index] = value;
+                    }
+                }
+                
+                if (flowData.labels.length > maxDataPoints) {
+                    flowData.labels.shift();
+                    flowData.gasValues.shift();
+                    flowData.liquidValues.shift();
+                }
+                
+                flowChart.data.labels = flowData.labels.slice();
+                flowChart.data.datasets[0].data = flowData.gasValues.slice();
+                flowChart.data.datasets[1].data = flowData.liquidValues.slice();
+                flowChart.update('none');
+            }
+            
+            if ((tagName.includes('ExportPumpStatus') || tagName.includes('WaterTreatEff')) && utilityChart) {
+                if (tagName.includes('ExportPumpStatus')) {
+                    if (!utilityData.labels.includes(time)) {
+                        utilityData.labels.push(time);
+                        utilityData.pumpValues.push(value);
+                        utilityData.treatValues.push(null);
+                    } else {
+                        const index = utilityData.labels.indexOf(time);
+                        utilityData.pumpValues[index] = value;
+                    }
+                }
+                
+                if (tagName.includes('WaterTreatEff')) {
+                    if (!utilityData.labels.includes(time)) {
+                        utilityData.labels.push(time);
+                        utilityData.treatValues.push(value);
+                        utilityData.pumpValues.push(null);
+                    } else {
+                        const index = utilityData.labels.indexOf(time);
+                        utilityData.treatValues[index] = value;
+                    }
+                }
+                
+                if (utilityData.labels.length > maxDataPoints) {
+                    utilityData.labels.shift();
+                    utilityData.pumpValues.shift();
+                    utilityData.treatValues.shift();
+                }
+                
+                utilityChart.data.labels = utilityData.labels.slice();
+                utilityChart.data.datasets[0].data = utilityData.pumpValues.slice();
+                utilityChart.data.datasets[1].data = utilityData.treatValues.slice();
+                utilityChart.update('none');
+            }
+            
+            if ((tagName.includes('DehydEfficiency') || tagName.includes('ESPStatus')) && systemChart) {
+                if (tagName.includes('DehydEfficiency')) {
+                    if (!systemData.labels.includes(time)) {
+                        systemData.labels.push(time);
+                        systemData.dehydValues.push(value);
+                        systemData.waterValues.push(null);
+                    } else {
+                        const index = systemData.labels.indexOf(time);
+                        systemData.dehydValues[index] = value;
+                    }
+                }
+                
+                if (tagName.includes('ESPStatus')) {
+                    if (!systemData.labels.includes(time)) {
+                        systemData.labels.push(time);
+                        systemData.waterValues.push(value);
+                        systemData.dehydValues.push(null);
+                    } else {
+                        const index = systemData.labels.indexOf(time);
+                        systemData.waterValues[index] = value;
+                    }
+                }
+                
+                if (systemData.labels.length > maxDataPoints) {
+                    systemData.labels.shift();
+                    systemData.dehydValues.shift();
+                    systemData.waterValues.shift();
+                }
+                
+                systemChart.data.labels = systemData.labels.slice();
+                systemChart.data.datasets[0].data = systemData.dehydValues.slice();
+                systemChart.data.datasets[1].data = systemData.waterValues.slice();
+                systemChart.update('none');
+            }
+        }
+
+        function switchTab(tabId) {
+            console.log('=== SWITCHING TAB ===', tabId);
+            
+            const validTabs = ['sagd', 'separation', 'utilities'];
+            if (!validTabs.includes(tabId)) {
+                console.warn('Invalid tab ID:', tabId);
+                return;
+            }
+            
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('show', 'active');
+                pane.style.display = 'none';
+            });
+            
+            const tabPane = document.getElementById(tabId);
+            if (tabPane) {
+                tabPane.classList.add('show', 'active');
+                tabPane.style.display = 'block';
+                console.log('✓ Tab pane shown:', tabId);
+            } else {
+                console.error('✗ Tab pane not found:', tabId);
+                return;
+            }
+            
+            document.querySelectorAll('#processTabs .nav-link').forEach(link => {
+                link.classList.remove('active');
+                link.setAttribute('aria-selected', 'false');
+            });
+            
+            const activeLink = document.getElementById(`${tabId}-tab`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+                activeLink.setAttribute('aria-selected', 'true');
+                console.log('✓ Tab link activated:', tabId);
+            }
+            
+            if (history.pushState) {
+                history.pushState(null, null, `#${tabId}`);
+            } else {
+                window.location.hash = tabId;
+            }
+            
+            setTimeout(() => {
+                const charts = {
+                    'sagd': [productionChart, efficiencyChart],
+                    'separation': [separatorChart, flowChart],
+                    'utilities': [utilityChart, systemChart]
+                };
+                
+                const tabCharts = charts[tabId] || [];
+                tabCharts.forEach(chart => {
+                    if (chart) {
+                        try {
+                            chart.resize();
+                            chart.update('none');
+                            console.log('Resized chart for tab:', tabId);
+                        } catch (e) {
+                            console.warn('Chart resize error:', e);
+                        }
+                    }
+                });
+            }, 200);
+            
+            console.log('=== TAB SWITCH COMPLETE ===');
+        }
+        
+        function handleHashNavigation() {
+            const hash = window.location.hash.substring(1);
+            console.log('Hash change detected:', hash);
+            if (hash && ['sagd', 'separation', 'utilities'].includes(hash)) {
+                console.log('Switching to hash tab:', hash);
+                switchTab(hash);
+            }
+        }
+        
+        function setupTabListeners() {
+            console.log('Setting up tab listeners...');
+            
+            const tabButtons = document.querySelectorAll('#processTabs a[href*="#"]');
+            console.log('Found tab buttons:', tabButtons.length);
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const href = this.getAttribute('href');
+                    const tabId = href ? href.split('#')[1] : null;
+                    
+                    if (tabId) {
+                        console.log('Tab clicked:', tabId);
+                        switchTab(tabId);
+                    }
+                });
+            });
+            
+            window.addEventListener('hashchange', handleHashNavigation);
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('ProcessTabs page - DOM loaded');
+            
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js library not loaded!');
+                alert('Chart.js library failed to load. Please refresh the page.');
+                return;
+            }
+            
+            const initialHash = window.location.hash.substring(1);
+            console.log('Initial URL hash:', initialHash);
+            
+            initCharts();
+            initSignalR();
+            
+            setTimeout(() => {
+                setupTabListeners();
+                
+                if (initialHash && ['sagd', 'separation', 'utilities'].includes(initialHash)) {
+                    console.log('Switching to initial hash tab:', initialHash);
+                    switchTab(initialHash);
+                } else {
+                    console.log('No valid hash, defaulting to SAGD');
+                    switchTab('sagd');
+                }
+            }, 200);
+        });
+        
+        window.switchTab = switchTab;
+    </script>
+}
+

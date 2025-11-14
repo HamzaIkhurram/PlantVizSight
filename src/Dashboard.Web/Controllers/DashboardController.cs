@@ -25,6 +25,10 @@ public class DashboardController : Controller
     public IActionResult Realtime()
     {
         _logger.LogInformation("Real-time dashboard accessed");
+        
+        var config = new RealtimeDashboardConfig();
+        ViewBag.Config = config;
+        
         return View();
     }
 
@@ -60,6 +64,16 @@ public class DashboardController : Controller
         
         ViewBag.WellPairCount = wellPairs.Count;
         ViewBag.Facilities = facilities;
+        ViewBag.Config = config;
+        
+        return View();
+    }
+
+    public IActionResult ProcessTabs()
+    {
+        _logger.LogInformation("Process Tabs dashboard accessed (SAGD, Separation, Utilities)");
+        
+        var config = new RealtimeDashboardConfig();
         ViewBag.Config = config;
         
         return View();
