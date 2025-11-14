@@ -681,7 +681,6 @@
                 tagData.values.push(value);
                 tagData.labels.push(formatTime(timestamp));
                 
-                // Trim to max points
                 if (tagData.timestamps.length > maxDataPoints) {
                     tagData.timestamps.shift();
                     tagData.rawValues.shift();
