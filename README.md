@@ -12,6 +12,10 @@ A professional real-time SCADA dashboard built with ASP.NET Core 9.0 and C# for 
 - **Chart.js** - Advanced real-time charting
 - **Bootstrap 5** - Responsive UI framework
 
+## Testing
+
+This project follows industry-standard testing practices with comprehensive test coverage. We use **XUnit** for unit and integration testing, and **Selenium WebDriver** for end-to-end UI testing. The test suite ensures that all dashboard components load correctly, SignalR connections establish properly, real-time data updates are received, and charts render accurately. All tests are automated and can be run as part of the CI/CD pipeline to maintain code quality and catch regressions early.
+
 ## Getting Started
 
 ```bash
