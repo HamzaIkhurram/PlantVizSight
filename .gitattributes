@@ -1,0 +1,9 @@
+# Treat Razor as C#
+*.cshtml linguist-language=C#
+
+# Ignore third party frontend stuff
+wwwroot/** linguist-vendored
+docs/** linguist-vendored
+**/lib/** linguist-vendored
+**/AdminLTE/** linguist-vendored
+
